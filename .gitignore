@@ -1,0 +1,40 @@
+# Android Studio / IntelliJ
+*.iml
+.gradle
+.idea/
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/build
+/captures
+.externalNativeBuild
+.cxx
+/google-services.json
+
+# Local System files
+.DS_Store
+
+# Build artifacts
+/build/
+**/build/
+cushy-storage/build/bundle/
+
+# Android release build artifacts
+/app/release/
+
+# Specialized
+*.keystore
+*.jks
+*.bin
+
+# Sensitive credentials
+gradle.properties
+secret-key.gpg
+cushy-storage/secret-key.gpg
+
+# Local IDE/System files
+local.properties
