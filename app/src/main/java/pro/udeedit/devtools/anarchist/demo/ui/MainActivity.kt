@@ -1,4 +1,4 @@
-package pro.udeedit.devtools.anarchist.demo
+package pro.udeedit.devtools.anarchist.demo.ui
 
 import android.Manifest
 import android.os.Build

@@ -1,10 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "pro.udeedit.devtools.anarchist.demo"
+
     compileSdk {
         version = release(37) {
             minorApiLevel = 1
@@ -23,9 +25,11 @@ android {
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
@@ -34,6 +38,16 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+
+    /**
+     * Modern configuration for Kotlin 2.x.
+     * This block replaces the deprecated 'kotlinOptions' to set the JVM target.
+     */
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 }
 
