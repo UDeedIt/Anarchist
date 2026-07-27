@@ -1,4 +1,4 @@
-package pro.udeedit.devtools.anarchist.ui.theme
+package pro.udeedit.devtools.anarchist.demo.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

@@ -24,4 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Anarchist"
 include(":app")
- 
+include(":anarchist")

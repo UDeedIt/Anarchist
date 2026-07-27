@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "pro.udeedit.devtools.anarchist"
+    namespace = "pro.udeedit.devtools.anarchist.demo"
     compileSdk {
         version = release(37) {
             minorApiLevel = 1
@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "pro.udeedit.devtools.anarchist"
+        applicationId = "pro.udeedit.devtools.anarchist.demo"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
@@ -54,4 +54,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    implementation(project(":anarchist"))
 }
