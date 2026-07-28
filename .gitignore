@@ -32,7 +32,7 @@ cushy-storage/build/bundle/
 *.bin
 
 # Sensitive credentials
-gradle.properties
+#gradle.properties
 secret-key.gpg
 cushy-storage/secret-key.gpg
 
