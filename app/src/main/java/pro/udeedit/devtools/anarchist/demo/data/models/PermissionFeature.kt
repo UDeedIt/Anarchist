@@ -19,6 +19,9 @@ import pro.udeedit.devtools.anarchist.AnarchistStatus
  * @property manifestTags A list of required XML tags to be declared in the `AndroidManifest.xml`.
  * @property rationaleLong A detailed technical explanation intended for the D2D supporting Information Dialog.
  * @property currentStatus The reactive state of the permission, determined by the Anarchist library.
+ * @property isManualOnly Flag indicating if the permission requires manual intervention in system settings (e.g. Exact Alarms).
+ * @property wasAskedBefore Determines if the "Clear History" button should be visible.
+ *      Matches the library's internal 'requestedBefore' flag.
  * @property actionIfAllowed An optional functional callback to be executed once the permission is granted.
  */
 data class PermissionFeature(
@@ -31,5 +34,7 @@ data class PermissionFeature(
     val manifestTags: List<String>,
     val rationaleLong: String,
     val currentStatus: AnarchistStatus = AnarchistStatus.DENIED,
+    val isManualOnly: Boolean = false,
+    val wasAskedBefore: Boolean = false,
     val actionIfAllowed: ((Context) -> Unit)? = null
 )

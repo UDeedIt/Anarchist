@@ -123,4 +123,42 @@ object Anarchist {
         val prefs = AnarchistPreference(activity)
         list.forEach { prefs.markAsRequested(it) }
     }
+
+    /**
+     * Resets the internal request history for a specified list of permissions.
+     *
+     * This function clears the "requestedBefore" flags from the
+     * library's internal persistence layer. It is specifically designed to facilitate
+     * thorough testing of the application's first-time permission request flows
+     * without requiring a full application data wipe.
+     *
+     * Use cases for this function include:
+     * 1. Implementing a "Reset Onboarding" or "Clear Permission Cache" feature.
+     * 2. Automated UI testing where multiple "first ask" scenarios must be verified in sequence.
+     * 3. Debugging rationale logic by simulating a fresh install state.
+     *
+     * @param context The context used to access the internal [AnarchistPreference] storage.
+     * @param permissions The list of manifest permission strings to be reset in the history.
+     */
+    fun resetRequestHistory(context: Context, permissions: List<String>) {
+        // Accesses the internal preference helper to modify the record
+        val prefs = AnarchistPreference(context)
+
+        // Iterates through the provided list and purges the 'asked before' flag for each
+        permissions.forEach { permission ->
+            prefs.clearRequestedFlag(permission)
+        }
+    }
+
+    /**
+     * Checks the internal preference layer to see if this permission
+     * has been requested from the system before.
+     *
+     * @param context Context for shared preferences access.
+     * @param permission The manifest permission string.
+     * @return True if a record of a previous request exists.
+     */
+    fun wasAskedBefore(context: Context, permission: String): Boolean {
+        return AnarchistPreference(context).isRequestedBefore(permission)
+    }
 }

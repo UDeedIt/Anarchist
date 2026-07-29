@@ -42,13 +42,15 @@ object PermissionRegistry {
             title = "Camera Access",
             manifestString = Manifest.permission.CAMERA,
             icon = Icons.Default.PhotoCamera,
-            description = "Provides access to device camera hardware for capturing photos and videos.",
-            apiRange = "All API levels. Enforced as a runtime permission since API 23 (Marshmallow).",
+            description = "Provides access to device camera hardware.",
+            apiRange = "All API levels.",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.CAMERA\" />"),
-            rationaleLong = "This is a standard dangerous permission. It must be declared in the manifest and requested at runtime to ensure user privacy during hardware access.",
+            rationaleLong = "Standard dangerous permission requiring runtime approval.",
+            isManualOnly = false, // Must be false to trigger the standard dialog first
             actionIfAllowed = { context ->
-                Toast.makeText(context, "Camera Action Triggered", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Camera ready for use!", Toast.LENGTH_SHORT).show()
             }
         )
+
     )
 }

@@ -1,85 +1,145 @@
 package pro.udeedit.devtools.anarchist.demo.ui
 
-import android.Manifest
-import android.os.Build
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.compose.viewModel
 import pro.udeedit.devtools.anarchist.Anarchist
 import pro.udeedit.devtools.anarchist.AnarchistStatus
+import pro.udeedit.devtools.anarchist.demo.ui.components.PermissionCard
+import pro.udeedit.devtools.anarchist.demo.ui.viewmodels.DashboardViewModel
 
+/**
+ * Main Activity for the Anarchist Demo.
+ *
+ * This class serves as the host for the scalable permission dashboard,
+ * demonstrating reactive permission management in a modern Compose environment.
+ */
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
+            // Applying the custom theme wrapper for the demo app
             AnarchistDemoTheme {
-                // Provides a coroutine scope tied to this Composable's lifecycle
-                val scope = rememberCoroutineScope()
 
-                // Track the full result object to handle both status and settings button
-                var permissionStatus by remember { mutableStateOf(AnarchistStatus.DENIED) }
-
-                // State to track the permission status in the UI
-                var statusText by remember { mutableStateOf("Checking permissions...") }
-
-                // Trigger the check once the Activity is ready
-                LaunchedEffect(Unit) {
-                    /**
-                     * For API 33+, check Notifications. For older, assume Allowed for this permission.
-                     */
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        val result = Anarchist.checkAndRequestPermissions(
-                            activity = this@MainActivity,
-                            permissions = listOf(Manifest.permission.POST_NOTIFICATIONS),
-                            requestCode = 1001,
-                            checkStatusOnly = true
-                        )
-
-                        permissionStatus = result.finalStatus
-                        statusText = "Notification Status: ${result.finalStatus}"
-
-                    } else {
-                        permissionStatus = AnarchistStatus.ALLOWED
-                        statusText = "Notifications auto-allowed (Pre-Tiramisu)"
-                    }
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    // Initializing the primary dashboard orchestration
+                    AnarchistDashboard()
                 }
+            }
+        }
+    }
+}
 
-                PermissionStatusScreen(
-                    statusText,
-                    currentStatus = permissionStatus,
-                    onRequestPermission = {
-                        scope.launch {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                val result = Anarchist.checkAndRequestPermissions(
-                                    activity = this@MainActivity,
-                                    permissions = listOf(Manifest.permission.POST_NOTIFICATIONS),
-                                    requestCode = 1001,
-                                    checkStatusOnly = false // Now we WANT the dialog to show
-                                )
+/**
+ * The primary Dashboard UI that orchestrates the display and interaction
+ * of all permission features defined in the registry.
+ *
+ * @param viewModel The state holder for the permission dashboard logic.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnarchistDashboard(
+    viewModel: DashboardViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    val activity = context as Activity
 
-                                // Update the status state
-                                permissionStatus = result.finalStatus
+    // Monitors the foreground/background state of the Activity
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
 
-                                // Update UI after the user interacts with the system dialog
-                                statusText = "Notification Status: ${result.finalStatus}"
-                            }
-                        }
+    // Observers the reactive StateFlow containing the permission features
+    val permissions by viewModel.permissionFeatures.collectAsState()
+
+    /**
+     * D2D SUPPORTING LOGIC: Lifecycle Synchronization
+     * Attaches an observer to refresh permission statuses every time the user
+     * returns to the app from the system settings or a permission dialog.
+     */
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                // Silently refresh the list to catch any manual system changes
+                viewModel.refreshStatuses(activity)
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    /**
+     * INITIAL SYNCHRONIZATION:
+     * Triggers a status check for all registered permissions on startup.
+     */
+    LaunchedEffect(Unit) {
+        viewModel.refreshStatuses(activity)
+    }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Anarchist Dashboard 🏴‍☠️") },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                )
+            )
+        }
+    ) { padding ->
+
+        /**
+         * SCALABLE LIST:
+         * Uses a LazyColumn to efficiently render the permission registry.
+         */
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(vertical = 8.dp)
+        ) {
+
+            // Map the permissions list into interactive cards
+            items(permissions) { feature ->
+
+                PermissionCard(
+                    feature = feature,
+
+                    // Logic for standard system request
+                    onRequest = {
+                        viewModel.requestPermission(activity, feature)
                     },
+
+                    // Path for manual recovery in system settings
                     onOpenSettings = {
-                        // Utilizing the Anarchist utility to open system settings
-                        Anarchist.openSettings(this)
+                        Anarchist.openSettings(context)
+                    },
+
+                    // Supporting utility for resetting the request history
+                    onRevoke = {
+                        viewModel.revokePermission(context, feature)
                     }
                 )
             }
@@ -87,68 +147,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * Reusable UI component for the demo.
- */
-@Composable
-fun PermissionStatusScreen(
-    status: String,
-    currentStatus: AnarchistStatus,
-    onRequestPermission: () -> Unit,
-    onOpenSettings: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Anarchist Library Demo 🏴‍☠️",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = status,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (currentStatus == AnarchistStatus.ALLOWED)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.error
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            /**
-             * The "Anarchist" Logic:
-             * If the status is PERMANENTLY DENIED, we must send the user to settings.
-             * Otherwise, we show the standard request button.
-             */
-            if (currentStatus == AnarchistStatus.DENIED_PERMANENTLY) {
-                Button(
-                    onClick = onOpenSettings,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                ) {
-                    Text("Open System Settings")
-                }
-            } else if (currentStatus == AnarchistStatus.DENIED) {
-                Button(onClick = onRequestPermission) {
-                    Text("Request Permission")
-                }
-            }
-        }
-    }
-}
-
 
 /**
- * Basic Theme for the Demo.
+ * Basic Theme wrapper for the Demo components.
  */
 @Composable
 fun AnarchistDemoTheme(content: @Composable () -> Unit) {
@@ -158,28 +159,62 @@ fun AnarchistDemoTheme(content: @Composable () -> Unit) {
 
 // --- PREVIEWS ---
 
-@Preview(showBackground = true, name = "Notification Status - Denied")
+/**
+ * Mock data used to verify the Dashboard layout in the IDE Preview.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview(showBackground = true, name = "Full Dashboard Preview")
 @Composable
-fun DemoPreviewDenied() {
+fun DashboardPreview() {
     AnarchistDemoTheme {
-        PermissionStatusScreen(
-            status = "Notification Status: DENIED_PERMANENTLY",
-            currentStatus = AnarchistStatus.DENIED_PERMANENTLY,
-            onRequestPermission = {},
-            onOpenSettings = {}
-        )
-    }
-}
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(title = { Text("Anarchist Dashboard 🏴‍☠️") })
+            }
+        ) { padding ->
 
-@Preview(showBackground = true, name = "Notification Status - Allowed")
-@Composable
-fun DemoPreviewAllowed() {
-    AnarchistDemoTheme {
-        PermissionStatusScreen(
-            "Notification Status: ALLOWED",
-            currentStatus = AnarchistStatus.ALLOWED,
-            onRequestPermission = { /* Do nothing in preview */ },
-            onOpenSettings = {}
-        )
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .padding(16.dp)
+            ) {
+
+                // Example 1: Standard Denied state
+                PermissionCard(
+                    feature = pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature(
+                        id = "PREVIEW_1",
+                        title = "Camera Access",
+                        manifestString = "",
+                        icon = Icons.Default.PhotoCamera,
+                        description = "Standard access to hardware camera sensors.",
+                        apiRange = "API 23+",
+                        manifestTags = emptyList(),
+                        rationaleLong = "",
+                        currentStatus = AnarchistStatus.DENIED
+                    ),
+                    onRequest = {},
+                    onOpenSettings = {},
+                    onRevoke = {}
+                )
+
+                // Example 2: Success (Allowed) state
+                PermissionCard(
+                    feature = pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature(
+                        id = "PREVIEW_2",
+                        title = "Notifications",
+                        manifestString = "",
+                        icon = Icons.Default.Notifications,
+                        description = "Ability to show push notifications.",
+                        apiRange = "API 33+",
+                        manifestTags = emptyList(),
+                        rationaleLong = "",
+                        currentStatus = AnarchistStatus.ALLOWED
+                    ),
+                    onRequest = {},
+                    onOpenSettings = {},
+                    onRevoke = {}
+                )
+            }
+        }
     }
 }
