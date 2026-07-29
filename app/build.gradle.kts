@@ -18,8 +18,9 @@ android {
         minSdk = 24
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0.0 merge 2"
 
+        // vc 1.0.0 merge 2 - ANARCH-11 Implement Dashboard Orchestration and Navigation
         // vc 1.0.0 - initial complete permission's livecycle
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
