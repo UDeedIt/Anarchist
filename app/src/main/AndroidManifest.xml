@@ -2,12 +2,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Standard Permission -->
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Part of the Media Bundle -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- API 33+ Notification Permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Special Permission for Exact Alarms (API 31+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
 
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+
 
     <application
         android:allowBackup="false"
