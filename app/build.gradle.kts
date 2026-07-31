@@ -18,7 +18,7 @@ android {
         minSdk = 24
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0.0 merge 2"
+        versionName = "1.0.0 merge 3"
 
         // test commit - correct commit message
         // vc 1.0.0 merge 2 - ANARCH-11 Implement Dashboard Orchestration and Navigation
