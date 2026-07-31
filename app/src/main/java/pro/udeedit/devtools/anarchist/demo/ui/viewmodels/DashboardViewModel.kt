@@ -10,13 +10,21 @@ import pro.udeedit.devtools.anarchist.Anarchist
 import pro.udeedit.devtools.anarchist.AnarchistStatus
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 import pro.udeedit.devtools.anarchist.demo.data.registry.PermissionRegistry
+import pro.udeedit.devtools.anarchist.demo.ui.navigation.Screen
 
 /**
- * ViewModel responsible for managing the state and orchestration of the Anarchist Dashboard.
+ * ViewModel responsible for orchestrating the multi-tab Anarchist Dashboard.
+ *
+ * It manages the reactive state of permission features across Standard, Special,
+ * and Bundled categories, ensuring real-time status synchronization with the Android system.
  */
 class DashboardViewModel : ViewModel() {
 
-    // Internal reactive state container
+    // Tracks the currently selected navigation tab
+    private val _currentScreen = MutableStateFlow<Screen>(Screen.Standard)
+    val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
+
+    // Internal reactive state container for the displayed permission list
     private val _permissionFeatures = MutableStateFlow<List<PermissionFeature>>(emptyList())
 
     /**
@@ -26,98 +34,132 @@ class DashboardViewModel : ViewModel() {
 
 
     init {
-        // Populate the initial dashboard data
-        loadPermissions()
+        // Default initialization with standard permissions
+        loadTab(Screen.Standard)
     }
 
 
     /**
-     * Initializes the dashboard list from the central PermissionRegistry.
-     */
-    private fun loadPermissions() {
-        _permissionFeatures.value = PermissionRegistry.getStandardPermissions()
-    }
-
-
-    /**
-     * Performs a non-intrusive status check for all registered permissions.
+     * Switches the dashboard content based on the selected navigation tab.
      *
-     * D2D Logic: This is called on ON_RESUME to ensure the UI matches the
-     * system state after a user returns from settings or dialogs.
+     * @param screen The target destination (Standard, Special, or Bundles).
+     */
+    fun selectTab(screen: Screen) {
+        _currentScreen.value = screen
+        loadTab(screen)
+    }
+
+
+    /**
+     * Loads the specific permission set from the registry based on the provided screen.
+     */
+    private fun loadTab(screen: Screen) {
+        _permissionFeatures.value = when (screen) {
+            Screen.Standard -> PermissionRegistry.getStandardPermissions()
+            Screen.Special -> PermissionRegistry.getSpecialPermissions()
+            Screen.Bundles -> PermissionRegistry.getGroupedPermissions()
+        }
+    }
+
+
+    /**
+     * Synchronizes the status of all visible permissions with the system state.
+     *
+     * Supporting Logic: This is triggered on lifecycle resumptions to ensure the UI
+     * reflects manual changes made by the user in system settings.
+     *
+     * @param activity The host activity required for system status checks.
      */
     fun refreshStatuses(activity: Activity) {
         val updatedList = _permissionFeatures.value.map { feature ->
+            // Parse permissions (handles single strings or comma-separated bundles)
+            val permissionsList = feature.manifestString.split(",").map { it.trim() }
+
             val result = Anarchist.checkAndRequestPermissions(
                 activity = activity,
-                permissions = listOf(feature.manifestString),
+                permissions = permissionsList,
                 requestCode = feature.id.hashCode(),
                 checkStatusOnly = true
             )
 
-            // Fetch the 'Asked' state from the library for this specific permission
-            val asked = Anarchist.wasAskedBefore(activity, feature.manifestString)
+            // Check if at least one permission in the feature has been asked before
+            val asked = permissionsList.any { Anarchist.wasAskedBefore(activity, it) }
 
             feature.copy(
                 currentStatus = result.finalStatus,
-                wasAskedBefore = asked // Update the UI flag
+                wasAskedBefore = asked
             )
         }
         _permissionFeatures.value = updatedList
     }
 
 
-
     /**
-     * Triggers a standard system permission request for a specific feature.
+     * Triggers a system permission request or intent-based settings navigation.
      */
     fun requestPermission(activity: Activity, feature: PermissionFeature) {
+        val permissionsList = feature.manifestString.split(",").map { it.trim() }
+
         val result = Anarchist.checkAndRequestPermissions(
             activity = activity,
-            permissions = listOf(feature.manifestString),
+            permissions = permissionsList,
             requestCode = feature.id.hashCode(),
-            checkStatusOnly = false // Triggers the system dialog
+            checkStatusOnly = false
         )
 
-        // Update the list immediately based on the user's action
-        updateFeatureStatus(feature.id, result.finalStatus)
+        updateFeatureInList(feature.id, result.finalStatus, true)
     }
 
 
     /**
-     * Resets the internal request history for a specific permission.
+     * Resets the library's internal request history for a specific feature.
      *
-     * D2D Supporting Utility: This clears the 'asked before' flag in the
-     * library's persistence layer, allowing the developer to see the
-     * system dialog again as if it were a first-time install.
-     *
-     * @param context Context required for preference modification.
-     * @param feature The specific permission feature to reset.
+     * Supporting Utility: Clears the 'requestedBefore' flag for all permissions
+     * associated with this feature to allow testing first-run scenarios.
      */
     fun revokePermission(context: Context, feature: PermissionFeature) {
-        // Use the library utility to clear the history
-        Anarchist.resetRequestHistory(context, listOf(feature.manifestString))
+        val permissionsList = feature.manifestString.split(",").map { it.trim() }
 
-        // Update the UI state list immediately
+        Anarchist.resetRequestHistory(context, permissionsList)
+
+        // Force UI reset to Denied state with no history
+        updateFeatureInList(feature.id, AnarchistStatus.DENIED, false)
+    }
+
+
+    /**
+     * Internal helper to perform a targeted update on a specific list item.
+     */
+    private fun updateFeatureInList(id: String, status: AnarchistStatus, wasAsked: Boolean) {
         _permissionFeatures.value = _permissionFeatures.value.map {
-            if (it.id == feature.id) {
-                it.copy(
-                    currentStatus = AnarchistStatus.DENIED,
-                    // CRUCIAL FIX: Set this to false so the button vanishes
-                    wasAskedBefore = false
-                )
+            if (it.id == id) {
+                it.copy(currentStatus = status, wasAskedBefore = wasAsked)
             } else {
                 it
             }
         }
     }
 
-
     /**
-     * Internal helper to update a specific item in the state list.
+     * Resets the request history for every permission defined in the registry.
+     *
+     * D2D Supporting Utility: Clears the 'asked before' flag globally,
+     * restoring the application to a fresh-install state for all categories.
      */
-    private fun updateFeatureStatus(id: String, newStatus: AnarchistStatus) {
-        _permissionFeatures.value = _permissionFeatures.value.map {
-            if (it.id == id) it.copy(currentStatus = newStatus) else it
-        }
+    fun resetAllHistory(context: Context) {
+        // Collect all manifest strings from all registry categories
+        val allPermissions = PermissionRegistry.getStandardPermissions().map { it.manifestString } +
+                PermissionRegistry.getSpecialPermissions().map { it.manifestString } +
+                PermissionRegistry.getGroupedPermissions().map { it.manifestString }
+
+        // Split bundles and flatten into a single list of unique permissions
+        val flatList = allPermissions.flatMap { it.split(",") }.map { it.trim() }.distinct()
+
+        // Trigger the library reset
+        Anarchist.resetRequestHistory(context, flatList)
+
+        // Refresh the current UI state immediately
+        // Note: activity check is omitted here as we only need context for reset
+        loadTab(_currentScreen.value)
     }
 }
