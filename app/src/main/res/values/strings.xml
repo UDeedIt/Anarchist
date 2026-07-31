@@ -1,3 +1,23 @@
 <resources>
-    <string name="app_name">Anarchist</string>
+
+    <string name="app_name">Anarchist Demo</string>
+
+    <string name="dashboard_title">Anarchist Dashboard</string>
+
+    <!-- Tab Titles -->
+    <string name="tab_standard">Standard</string>
+    <string name="tab_special">Special</string>
+    <string name="tab_bundles">Bundles</string>
+
+    <!-- Reset Dialog -->
+    <string name="reset_dialog_title">Reset All History?</string>
+    <string name="reset_dialog_text">This will clear the library\'s internal request history for all permissions. You will be able to see the system dialogs again.</string>
+    <string name="reset_confirm">Reset</string>
+    <string name="reset_cancel">Cancel</string>
+
+    <!-- Navigation Descriptions -->
+    <string name="nav_desc_standard">View standard system permissions</string>
+    <string name="nav_desc_special">View special intent permissions</string>
+    <string name="nav_desc_bundles">View grouped permission features</string>
+
 </resources>
