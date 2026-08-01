@@ -1,13 +1,23 @@
 package pro.udeedit.devtools.anarchist.demo.data.registry
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Alarm // Added for Special Permissions
 import androidx.compose.material.icons.filled.PermMedia
+import androidx.core.app.NotificationCompat
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CAMERA
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_EXACT_ALARM
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_MEDIA_BUNDLE
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_NOTIFICATIONS
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 
 /**
@@ -26,7 +36,7 @@ object PermissionRegistry {
      */
     fun getStandardPermissions(): List<PermissionFeature> = listOf(
         PermissionFeature(
-            id = "NOTIFICATIONS",
+            id = ID_NOTIFICATIONS,
             title = "Post Notifications",
             //noinspection NewApi
             manifestString = Manifest.permission.POST_NOTIFICATIONS,
@@ -35,12 +45,13 @@ object PermissionRegistry {
             apiRange = "API 33 (Tiramisu) and above.",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\" />"),
             rationaleLong = "Required for delivering real-time alerts. On devices running API 32 and below, this permission is granted automatically at install time.",
-            actionIfAllowed = { context ->
-                Toast.makeText(context, "Notification Action Triggered", Toast.LENGTH_SHORT).show()
-            }
+            // functional action
+//            actionIfAllowed = { context ->
+//                sendTestNotification(context)
+//            }
         ),
         PermissionFeature(
-            id = "CAMERA",
+            id = ID_CAMERA,
             title = "Camera Access",
             manifestString = Manifest.permission.CAMERA,
             icon = Icons.Default.PhotoCamera,
@@ -49,9 +60,11 @@ object PermissionRegistry {
             manifestTags = listOf("<uses-permission android:name=\"android.permission.CAMERA\" />"),
             rationaleLong = "Standard dangerous permission requiring runtime approval.",
             isManualOnly = false,
-            actionIfAllowed = { context ->
-                Toast.makeText(context, "Camera ready for use!", Toast.LENGTH_SHORT).show()
-            }
+            // functional action
+//            actionIfAllowed = { context ->
+//                val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+//                context.startActivity(intent)
+//            }
         )
     )
 
@@ -63,7 +76,7 @@ object PermissionRegistry {
      */
     fun getSpecialPermissions(): List<PermissionFeature> = listOf(
         PermissionFeature(
-            id = "EXACT_ALARM",
+            id = ID_EXACT_ALARM,
             title = "Schedule Exact Alarms",
             //noinspection NewApi
             manifestString = Manifest.permission.SCHEDULE_EXACT_ALARM,
@@ -87,7 +100,7 @@ object PermissionRegistry {
      */
     fun getGroupedPermissions(): List<PermissionFeature> = listOf(
         PermissionFeature(
-            id = "MEDIA_BUNDLE",
+            id = ID_MEDIA_BUNDLE,
             title = "Media Capture Bundle",
             // For bundles, we use a custom identifier; the ViewModel will map this to a list
             manifestString = "android.permission.CAMERA, android.permission.RECORD_AUDIO",
