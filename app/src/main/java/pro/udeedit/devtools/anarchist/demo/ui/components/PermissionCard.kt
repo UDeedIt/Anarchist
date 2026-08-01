@@ -15,8 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import pro.udeedit.devtools.anarchist.AnarchistStatus
+import pro.udeedit.devtools.anarchist.demo.data.actions.PermissionActionExecutor
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 import pro.udeedit.devtools.anarchist.demo.ui.AnarchistDemoTheme
+import pro.udeedit.devtools.anarchist.demo.ui.theme.SuccessGreen
 
 /**
  * A reactive card component that displays the status and management options
@@ -38,6 +40,8 @@ fun PermissionCard(
     onOpenSettings: () -> Unit,
     onRevoke: () -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     // State to manage the visibility of the D2D Supporting Information Dialog
     var showInfoDialog by remember { mutableStateOf(false) }
 
@@ -159,7 +163,7 @@ fun PermissionCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = when (feature.currentStatus) {
                     // Success Green
-                    AnarchistStatus.ALLOWED -> Color(0xFF4CAF50)
+                    AnarchistStatus.ALLOWED -> SuccessGreen
                     // Error Red
                     AnarchistStatus.DENIED_PERMANENTLY -> MaterialTheme.colorScheme.error
                     // Default Info Blue
@@ -203,10 +207,14 @@ fun PermissionCard(
                         // Case: Permission is already granted
                         AnarchistStatus.ALLOWED -> {
                             Button(
-                                onClick = { /* TODO: Execute feature.actionIfAllowed */ },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF4CAF50) // Green for success
-                                )
+                                onClick = {
+                                    // Dispatch action to the centralized executor
+                                    PermissionActionExecutor.performAction(
+                                        context,
+                                        feature.id
+                                    )
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
                             ) {
                                 Text("Test Feature")
                             }
