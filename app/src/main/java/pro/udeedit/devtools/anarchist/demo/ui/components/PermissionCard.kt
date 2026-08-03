@@ -92,7 +92,7 @@ fun PermissionCard(
         )
     }
 
-
+    // --- CARD UI ---
     Card(
         modifier = Modifier
             .fillMaxWidth()

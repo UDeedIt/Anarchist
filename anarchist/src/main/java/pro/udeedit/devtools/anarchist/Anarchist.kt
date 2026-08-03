@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -161,4 +162,52 @@ object Anarchist {
     fun wasAskedBefore(context: Context, permission: String): Boolean {
         return AnarchistPreference(context).isRequestedBefore(permission)
     }
+
+
+    /**
+     * Checks if a special permission is granted.
+     *
+     * Supporting Logic: Standard system checks do not apply to special permissions.
+     * This function routes the check to the appropriate system service based on
+     * the permission string.
+     */
+    fun isSpecialPermissionGranted(context: Context, permission: String): Boolean {
+        return when (permission) {
+            "android.permission.SCHEDULE_EXACT_ALARM" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                    alarmManager.canScheduleExactAlarms()
+                } else {
+                    true // Auto-allowed on older versions
+                }
+            }
+            // Future special permissions like SYSTEM_ALERT_WINDOW can be added here
+            else -> false
+        }
+    }
+
+    /**
+     * Specialized utility to open specific system settings pages.
+     *
+     * @param context The context used to start the activity.
+     * @param permission The specific permission string requiring intervention.
+     */
+    fun openSpecialSettings(context: Context, permission: String) {
+        val intent = when (permission) {
+            "android.permission.SCHEDULE_EXACT_ALARM" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                } else null
+            }
+            else -> null
+        }
+
+        intent?.let {
+            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(it)
+        } ?: openSettings(context) // Fallback to general settings
+    }
+
 }
