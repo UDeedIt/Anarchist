@@ -1,19 +1,12 @@
 package pro.udeedit.devtools.anarchist.demo.data.registry
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.content.Intent
-import android.os.Build
-import android.provider.MediaStore
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Alarm // Added for Special Permissions
 import androidx.compose.material.icons.filled.PermMedia
-import androidx.core.app.NotificationCompat
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CAMERA
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_EXACT_ALARM
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_MEDIA_BUNDLE
@@ -44,7 +37,7 @@ object PermissionRegistry {
             description = "Enables the application to display push notifications in the system tray.",
             apiRange = "API 33 (Tiramisu) and above.",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\" />"),
-            rationaleLong = "Required for delivering real-time alerts. On devices running API 32 and below, this permission is granted automatically at install time.",
+            supportingRationale = "Required for delivering real-time alerts. On devices running API 32 and below, this permission is granted automatically at install time.",
             // functional action
 //            actionIfAllowed = { context ->
 //                sendTestNotification(context)
@@ -58,7 +51,7 @@ object PermissionRegistry {
             description = "Provides access to device camera hardware.",
             apiRange = "All API levels.",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.CAMERA\" />"),
-            rationaleLong = "Standard dangerous permission requiring runtime approval.",
+            supportingRationale = "Standard dangerous permission requiring runtime approval.",
             isManualOnly = false,
             // functional action
 //            actionIfAllowed = { context ->
@@ -84,7 +77,7 @@ object PermissionRegistry {
             description = "Required for high-precision, time-sensitive background tasks.",
             apiRange = "API 31 (S) and above.",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\" />"),
-            rationaleLong = "This permission allows the app to wake the device at an exact millisecond. It cannot be granted via a standard dialog and requires the user to toggle a switch in the system settings.",
+            supportingRationale = "This permission allows the app to wake the device at an exact millisecond. It cannot be granted via a standard dialog and requires the user to toggle a switch in the system settings.",
             isManualOnly = true, // Signals the UI to show 'Open Settings' immediately
             actionIfAllowed = { context ->
                 Toast.makeText(context, "Exact Alarm scheduled successfully!", Toast.LENGTH_SHORT).show()
@@ -111,7 +104,7 @@ object PermissionRegistry {
                 "<uses-permission android:name=\"android.permission.CAMERA\" />",
                 "<uses-permission android:name=\"android.permission.RECORD_AUDIO\" />"
             ),
-            rationaleLong = "Demonstrates the library's ability to process multiple permissions simultaneously and return a consolidated status.",
+            supportingRationale = "Demonstrates the library's ability to process multiple permissions simultaneously and return a consolidated status.",
             actionIfAllowed = { context ->
                 Toast.makeText(context, "Full Media Bundle Granted!", Toast.LENGTH_SHORT).show()
             }
