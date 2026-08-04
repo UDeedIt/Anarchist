@@ -98,13 +98,38 @@ object Anarchist {
     /**
      * Checks if a specific permission is currently granted by the system.
      *
+     * Supporting Logic: Standard [ContextCompat.checkSelfPermission] only works
+     * for dangerous permissions. This function is enhanced to route the check
+     * to the appropriate system service based on the permission string
+     * (e.g. AlarmManager for Exact Alarms).
+     *
      * @param context The context used for the system check.
      * @param permission The manifest permission string to verify.
-     * @return True if [PackageManager.PERMISSION_GRANTED] is returned, false otherwise.
+     * @return True if the permission is currently granted, false otherwise.
      */
     private fun isGranted(context: Context, permission: String): Boolean {
-        return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        return when (permission) {
+            // Supporting Case: Exact Alarms (API 31+)
+            "android.permission.SCHEDULE_EXACT_ALARM" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                    alarmManager.canScheduleExactAlarms()
+
+                } else {
+                    true // Implicitly allowed on older versions
+                }
+            }
+
+            // Default Case: Standard dangerous permissions
+            else -> {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    permission
+                ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
     }
+
 
     /**
      * Triggers the standard Android system permission dialog for a list of permissions.
@@ -165,26 +190,21 @@ object Anarchist {
 
 
     /**
-     * Checks if a special permission is granted.
+     * Checks the system status of a 'Special' permission.
      *
-     * Supporting Logic: Standard system checks do not apply to special permissions.
-     * This function routes the check to the appropriate system service based on
-     * the permission string.
+     * D2D Supporting Logic: Unlike standard dangerous permissions, special
+     * permissions (such as Exact Alarms or System Overlays) require unique
+     * system service checks. This function provides a unified entry point
+     * for these non-standard verifications.
+     *
+     * @param context The context used to access system services.
+     * @param permission The manifest permission string to verify.
+     * @return True if the permission is currently granted by the system, false otherwise.
      */
     fun isSpecialPermissionGranted(context: Context, permission: String): Boolean {
-        return when (permission) {
-            "android.permission.SCHEDULE_EXACT_ALARM" -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                    alarmManager.canScheduleExactAlarms()
-                } else {
-                    true // Auto-allowed on older versions
-                }
-            }
-            // Future special permissions like SYSTEM_ALERT_WINDOW can be added here
-            else -> false
-        }
+        return isGranted(context, permission)
     }
+
 
     /**
      * Specialized utility to open specific system settings pages.

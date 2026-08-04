@@ -6,11 +6,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CAMERA
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_EXACT_ALARM
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_NOTIFICATIONS
+import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 
 /**
  * Centralized executor for all functional "Reward" actions in the Anarchist Demo.
@@ -20,20 +22,29 @@ import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_NOTIFICA
  */
 object PermissionActionExecutor {
 
+    private const val TAG = "PermissionActionExecutor"
     private const val DEMO_CHANNEL_ID = "anarchist_demo_channel"
 
     /**
-     * Dispatches the appropriate system action based on the permission ID.
+     * Performs the appropriate system logic based on the granted permission feature.
      *
-     * his function performs a final system check before
-     * execution to ensure that the required permission is still valid.
+     * @param context The context required to trigger system intents or services.
+     * @param feature The full [PermissionFeature] object containing status and ID.
      */
-    fun performAction(context: Context, featureId: String) {
-        when (featureId) {
+    fun performAction(context: Context, feature: PermissionFeature) {
+        // Final safety check: ensure the action only runs if the library confirms ALLOWED status
+        if (feature.currentStatus != pro.udeedit.devtools.anarchist.AnarchistStatus.ALLOWED) {
+            return
+        }
+
+        when (feature.id) {
             ID_NOTIFICATIONS -> sendTestNotification(context)
             ID_CAMERA -> openCamera(context)
             ID_EXACT_ALARM -> triggerAlarmTest(context)
-            else -> Toast.makeText(context, "No action defined for $featureId", Toast.LENGTH_SHORT).show()
+
+//            else -> { /* No action defined */ }
+            else -> Toast.makeText(context, "No action defined for ${feature.id}", Toast.LENGTH_SHORT).show()
+
         }
     }
 
@@ -43,8 +54,10 @@ object PermissionActionExecutor {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
+
         } catch (e: Exception) {
             Toast.makeText(context, "Error opening camera", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Error opening camera: ${e.message}")
         }
     }
 

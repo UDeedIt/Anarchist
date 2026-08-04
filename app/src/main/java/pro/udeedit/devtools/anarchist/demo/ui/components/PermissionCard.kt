@@ -18,7 +18,9 @@ import pro.udeedit.devtools.anarchist.AnarchistStatus
 import pro.udeedit.devtools.anarchist.demo.data.actions.PermissionActionExecutor
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 import pro.udeedit.devtools.anarchist.demo.ui.AnarchistDemoTheme
+import pro.udeedit.devtools.anarchist.demo.ui.theme.ErrorRed
 import pro.udeedit.devtools.anarchist.demo.ui.theme.SuccessGreen
+import pro.udeedit.devtools.anarchist.demo.ui.theme.WarningOrange
 
 /**
  * A reactive card component that displays the status and management options
@@ -83,7 +85,7 @@ fun PermissionCard(
                     Spacer(Modifier.height(16.dp))
 
                     Text("Supporting Rationale", style = MaterialTheme.typography.titleSmall)
-                    Text(feature.rationaleLong, style = MaterialTheme.typography.bodyMedium)
+                    Text(feature.supportingRationale, style = MaterialTheme.typography.bodyMedium)
                 }
             },
             confirmButton = {
@@ -158,20 +160,19 @@ fun PermissionCard(
 
             // --- STATUS INFORMATION BLOCK ---
             Text(
-                text = getStatusDescription(feature.currentStatus, feature.wasAskedBefore),
-                // Increased font size for better technical readability
+                // Added feature.isManualOnly to the parameters
+                text = getStatusDescription(feature.currentStatus, feature.wasAskedBefore, feature.isManualOnly),
                 style = MaterialTheme.typography.bodySmall,
-                color = when (feature.currentStatus) {
-                    // Success Green
-                    AnarchistStatus.ALLOWED -> SuccessGreen
-                    // Error Red
-                    AnarchistStatus.DENIED_PERMANENTLY -> MaterialTheme.colorScheme.error
-                    // Default Info Blue
+                color = when {
+                    feature.currentStatus == AnarchistStatus.ALLOWED -> Color(0xFF4CAF50)
+                    feature.isManualOnly -> WarningOrange // Using orange for manual requirement
+                    feature.currentStatus == AnarchistStatus.DENIED_PERMANENTLY -> MaterialTheme.colorScheme.error
                     else -> MaterialTheme.colorScheme.primary
                 },
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
+
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -199,19 +200,19 @@ fun PermissionCard(
 
                 /**
                  * DYNAMIC STATE LOGIC:
-                 * Swaps the primary action button based on the AnarchistStatus.
+                 * Swaps the primary action button based on the AnarchistStatus and the manualOnly flag.
                  * This ensures the user is always presented with the correct next step.
                  */
                 Box {
-                    when (feature.currentStatus) {
+                    when {
                         // Case: Permission is already granted
-                        AnarchistStatus.ALLOWED -> {
+                        feature.currentStatus == AnarchistStatus.ALLOWED -> {
                             Button(
                                 onClick = {
                                     // Dispatch action to the centralized executor
                                     PermissionActionExecutor.performAction(
                                         context,
-                                        feature.id
+                                        feature
                                     )
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen)
@@ -220,12 +221,13 @@ fun PermissionCard(
                             }
                         }
 
-                        // Case: Permission blocked by 'Don't ask again'
-                        AnarchistStatus.DENIED_PERMANENTLY -> {
+                        // Case: Permission requires manual settings (Special) OR is blocked by 'Don't ask again'
+                        feature.isManualOnly || feature.currentStatus == AnarchistStatus.DENIED_PERMANENTLY -> {
                             Button(
                                 onClick = onOpenSettings,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error // Red for blocked
+                                    // Orange for special/manual permissions, Red for standard blocked permissions
+                                    containerColor = if (feature.isManualOnly) WarningOrange else ErrorRed
                                 )
                             ) {
                                 Text("Open Settings")
@@ -254,14 +256,25 @@ fun PermissionCard(
 /**
  * Returns a technical description based on the current permission state.
  */
-private fun getStatusDescription(status: AnarchistStatus, wasAsked: Boolean): String {
+private fun getStatusDescription(status: AnarchistStatus, wasAsked: Boolean, isManualOnly: Boolean): String {
     return when {
+        // Case 1: Permission is already active
         status == AnarchistStatus.ALLOWED -> "System Status: GRANTED. Feature is unlocked."
+
+        // Case 2: Special Permission (Manual Only) that is not yet allowed
+        isManualOnly -> "System Status: MANUAL ENABLE REQUIRED. This permission must be toggled in system settings."
+
+        // Case 3: Standard permission blocked by the user
         status == AnarchistStatus.DENIED_PERMANENTLY -> "System Status: PERMANENTLY DENIED. User must manually enable in settings."
+
+        // Case 4: Standard permission denied once (Rationale state)
         wasAsked && status == AnarchistStatus.DENIED -> "System Status: DENIED (Rationale). System allows asking again with an explanation."
+
+        // Case 5: Fresh state
         else -> "System Status: UNKNOWN / NOT REQUESTED. Ready for first attempt."
     }
 }
+
 
 
 // --- PREVIEWS ---
@@ -279,7 +292,7 @@ fun PreviewCardInitial() {
                 description = "Standard access to hardware camera sensors.",
                 apiRange = "API 23+",
                 manifestTags = emptyList(),
-                rationaleLong = "",
+                supportingRationale = "",
                 currentStatus = AnarchistStatus.DENIED,
                 wasAskedBefore = false
             ),
@@ -303,7 +316,7 @@ fun PreviewCardRationale() {
                 description = "Ability to show push notifications.",
                 apiRange = "API 33+",
                 manifestTags = emptyList(),
-                rationaleLong = "",
+                supportingRationale = "",
                 currentStatus = AnarchistStatus.DENIED,
                 wasAskedBefore = true
             ),
@@ -327,7 +340,7 @@ fun PreviewCardBlocked() {
                 description = "Required for navigation features.",
                 apiRange = "API 23+",
                 manifestTags = emptyList(),
-                rationaleLong = "",
+                supportingRationale = "",
                 currentStatus = AnarchistStatus.DENIED_PERMANENTLY,
                 wasAskedBefore = true
             ),
@@ -351,7 +364,7 @@ fun PreviewCardAllowed() {
                 description = "Access to device contacts.",
                 apiRange = "API 23+",
                 manifestTags = emptyList(),
-                rationaleLong = "Granted.",
+                supportingRationale = "Granted.",
                 currentStatus = AnarchistStatus.ALLOWED,
                 wasAskedBefore = true
             ),
