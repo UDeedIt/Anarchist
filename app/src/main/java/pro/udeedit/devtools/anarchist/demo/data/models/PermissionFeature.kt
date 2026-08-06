@@ -18,6 +18,11 @@ import pro.udeedit.devtools.anarchist.AnarchistStatus
  * @property apiRange The specific Android API levels where this permission is enforced at runtime.
  * @property manifestTags A list of required XML tags to be declared in the `AndroidManifest.xml`.
  * @property supportingRationale A detailed technical explanation intended for the D2D supporting Information Dialog.
+ * @property manualEnablementGuidance Step-by-step instructions for the user on how to enable the permission
+ *  within the Android System Settings. If null, no guidance dialog will be shown.
+ *
+ *  D2D Supporting Logic: This is displayed in the Pre-Settings Guidance Dialog
+ *  to reduce user friction during manual intervention.
  * @property currentStatus The reactive state of the permission, determined by the Anarchist library.
  * @property isManualOnly Flag indicating if the permission requires manual intervention in system settings (e.g. Exact Alarms).
  * @property wasAskedBefore Determines if the "Clear History" button should be visible.
@@ -33,6 +38,7 @@ data class PermissionFeature(
     val apiRange: String,
     val manifestTags: List<String>,
     val supportingRationale: String,
+    val manualEnablementGuidance: String? = null,
     val currentStatus: AnarchistStatus = AnarchistStatus.DENIED,
     val isManualOnly: Boolean = false,
     val wasAskedBefore: Boolean = false,

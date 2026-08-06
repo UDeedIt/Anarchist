@@ -143,7 +143,12 @@ fun AnarchistDashboard(
         currentScreen = currentScreen,
         onTabSelected = { viewModel.selectTab(it) },
         onRequest = { viewModel.requestPermission(activity, it) },
-        onOpenSettings = { Anarchist.openSettings(context) },
+
+        // Passing the feature to handle specialized intent mapping
+        onOpenSettings = { feature ->
+            Anarchist.openSpecialSettings(context, feature.manifestString)
+        },
+
         onRevoke = { viewModel.revokePermission(context, it) },
         onResetAll = { showResetDialog = true }
     )
@@ -161,7 +166,7 @@ fun AnarchistDashboard(
  * @param currentScreen The currently active navigation tab.
  * @param onTabSelected Callback for switching between dashboard categories.
  * @param onRequest Callback to trigger the library's permission request logic.
- * @param onOpenSettings Callback to open the device application settings.
+ * @param onOpenSettings Callback to open the device application settings (Standard or Special).
  * @param onRevoke Callback to reset the internal request history.
  * @param onResetAll Callback to trigger the global reset dialog.
  */
@@ -173,7 +178,7 @@ fun DashboardContent(
     currentScreen: Screen,
     onTabSelected: (Screen) -> Unit,
     onRequest: (PermissionFeature) -> Unit,
-    onOpenSettings: (PermissionFeature) -> Unit,
+    onOpenSettings: (PermissionFeature) -> Unit, // Updated to accept feature
     onRevoke: (PermissionFeature) -> Unit,
     onResetAll: () -> Unit
 ) {
@@ -240,7 +245,10 @@ fun DashboardContent(
                 PermissionCard(
                     feature = feature,
                     onRequest = { onRequest(feature) },
+
+                    // Passing the feature down to the component
                     onOpenSettings = { onOpenSettings(feature) },
+
                     onRevoke = { onRevoke(feature) }
                 )
             }
