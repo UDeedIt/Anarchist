@@ -78,6 +78,7 @@ object PermissionRegistry {
             apiRange = "API 31 (S) and above.",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\" />"),
             supportingRationale = "This permission allows the app to wake the device at an exact millisecond. It cannot be granted via a standard dialog and requires the user to toggle a switch in the system settings.",
+            manualEnablementGuidance = "1. Locate 'Anarchist Demo' in the list.\n2. Toggle 'Allow setting alarms' to ON.\n3. Return to the app.",
             isManualOnly = true, // Signals the UI to show 'Open Settings' immediately
             actionIfAllowed = { context ->
                 Toast.makeText(context, "Exact Alarm scheduled successfully!", Toast.LENGTH_SHORT).show()

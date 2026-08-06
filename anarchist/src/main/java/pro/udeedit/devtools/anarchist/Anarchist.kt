@@ -205,15 +205,19 @@ object Anarchist {
         return isGranted(context, permission)
     }
 
-
     /**
-     * Specialized utility to open specific system settings pages.
+     * Specialized utility to open specific system settings pages for permissions
+     * that require manual intervention (e.g., Exact Alarms).
      *
-     * @param context The context used to start the activity.
-     * @param permission The specific permission string requiring intervention.
+     * Supporting Logic: If a specialized intent fails or is not supported by the
+     * current API level, the function falls back to the general App Info settings
+     * to ensure the user is never left on a dead screen.
+     *
+     * @param context The context used to start the intent.
+     * @param manifestString The specific permission string requiring the settings jump.
      */
-    fun openSpecialSettings(context: Context, permission: String) {
-        val intent = when (permission) {
+    fun openSpecialSettings(context: Context, manifestString: String) {
+        val intent = when (manifestString) {
             "android.permission.SCHEDULE_EXACT_ALARM" -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
@@ -224,10 +228,17 @@ object Anarchist {
             else -> null
         }
 
-        intent?.let {
-            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(it)
-        } ?: openSettings(context) // Fallback to general settings
+        try {
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            } else {
+                // Fallback for permissions without specific intent mapping
+                openSettings(context)
+            }
+        } catch (e: Exception) {
+            // Final safety fallback to ensure the button always performs an action
+            openSettings(context)
+        }
     }
-
 }

@@ -47,6 +47,16 @@ fun PermissionCard(
     // State to manage the visibility of the D2D Supporting Information Dialog
     var showInfoDialog by remember { mutableStateOf(false) }
 
+    // State to manage the pre-settings guidance dialog for manual-only permissions
+    var showGuidanceDialog by remember { mutableStateOf(false) }
+
+    /**
+     * Supporting Logic: If guidance exists, show the dialog.
+     * If guidance is null, bypass the dialog and trigger the intent immediately.
+     */
+    val hasGuidance = feature.manualEnablementGuidance != null
+
+
     // --- D2D SUPPORTING INFORMATION DIALOG ---
     if (showInfoDialog) {
         AlertDialog(
@@ -90,6 +100,41 @@ fun PermissionCard(
             },
             confirmButton = {
                 TextButton(onClick = { showInfoDialog = false }) { Text("Close") }
+            }
+        )
+    }
+
+    // --- PRE-SETTINGS GUIDANCE DIALOG ---
+    // --- PRE-SETTINGS GUIDANCE DIALOG ---
+    if (showGuidanceDialog) {
+        AlertDialog(
+            onDismissRequest = { showGuidanceDialog = false },
+            title = { Text(text = "How to enable ${feature.title}") },
+            text = {
+                Text(
+                    text = feature.manualEnablementGuidance ?: "",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        /**
+                         * Supporting Logic:
+                         * 1. Close the dialog locally.
+                         * 2. Trigger the callback provided by the MainActivity.
+                         */
+                        showGuidanceDialog = false
+                        onOpenSettings()
+                    },
+                ) {
+                    Text("Go to Settings")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGuidanceDialog = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }
@@ -221,12 +266,24 @@ fun PermissionCard(
                             }
                         }
 
+                        // --- ACTION BUTTON CASE: Special or Blocked ---
                         // Case: Permission requires manual settings (Special) OR is blocked by 'Don't ask again'
                         feature.isManualOnly || feature.currentStatus == AnarchistStatus.DENIED_PERMANENTLY -> {
                             Button(
-                                onClick = onOpenSettings,
+                                onClick = {
+                                    /**
+                                     * Supporting Logic:
+                                     * 1. If manual instructions are provided (not null), show the guidance dialog.
+                                     * 2. If no instructions are provided (null), bypass the dialog and trigger
+                                     *    the settings intent immediately.
+                                     */
+                                    if (feature.manualEnablementGuidance != null) {
+                                        showGuidanceDialog = true
+                                    } else {
+                                        onOpenSettings()
+                                    }
+                                },
                                 colors = ButtonDefaults.buttonColors(
-                                    // Orange for special/manual permissions, Red for standard blocked permissions
                                     containerColor = if (feature.isManualOnly) WarningOrange else ErrorRed
                                 )
                             ) {
