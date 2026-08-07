@@ -78,7 +78,8 @@ class DashboardViewModel : ViewModel() {
             val result = Anarchist.checkAndRequestPermissions(
                 activity = activity,
                 permissions = permissionsList,
-                requestCode = feature.id.hashCode(),
+                // Ensure the hashCode is positive and within 16-bit range
+                requestCode = feature.id.hashCode().let { if (it < 0) -it else it } % 65536,
                 checkStatusOnly = true
             )
 
@@ -93,21 +94,36 @@ class DashboardViewModel : ViewModel() {
         _permissionFeatures.value = updatedList
     }
 
-
     /**
-     * Triggers a system permission request or intent-based settings navigation.
+     * Triggers a system permission request or redirects to special settings.
      */
     fun requestPermission(activity: Activity, feature: PermissionFeature) {
-        val permissionsList = feature.manifestString.split(",").map { it.trim() }
+        if (feature.isManualOnly) {
+            /**
+             * SPECIAL PERMISSION LOGIC:
+             * Redirects directly to the specialized system settings page.
+             */
+            Anarchist.openSpecialSettings(activity, feature.manifestString)
 
-        val result = Anarchist.checkAndRequestPermissions(
-            activity = activity,
-            permissions = permissionsList,
-            requestCode = feature.id.hashCode(),
-            checkStatusOnly = false
-        )
+        } else {
+            /**
+             * STANDARD PERMISSION LOGIC:
+             * Triggers the system dialog.
+             */
+            val permissionsList = feature.manifestString.split(",").map { it.trim() }
 
-        updateFeatureInList(feature.id, result.finalStatus, true)
+            // FIX: Ensure the requestCode is positive and within 16-bit range to prevent crashes
+            val safeRequestCode = feature.id.hashCode().let { if (it < 0) -it else it } % 65536
+
+            val result = Anarchist.checkAndRequestPermissions(
+                activity = activity,
+                permissions = permissionsList,
+                requestCode = safeRequestCode,
+                checkStatusOnly = false
+            )
+
+            updateFeatureInList(feature.id, result.finalStatus, true)
+        }
     }
 
 

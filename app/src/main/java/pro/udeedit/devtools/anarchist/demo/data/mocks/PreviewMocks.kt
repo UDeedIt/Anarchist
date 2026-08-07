@@ -26,7 +26,7 @@ object PreviewMocks {
             description = "Enables push notifications in the system tray.",
             apiRange = "API 33+",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\" />"),
-            rationaleLong = "Required for real-time alerts.",
+            supportingRationale = "Required for real-time alerts.",
             currentStatus = AnarchistStatus.DENIED,
             wasAskedBefore = false
         ),
@@ -38,7 +38,7 @@ object PreviewMocks {
             description = "Provides access to device camera hardware.",
             apiRange = "All API levels.",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.CAMERA\" />"),
-            rationaleLong = "Standard dangerous permission for photo/video capture.",
+            supportingRationale = "Standard dangerous permission for photo/video capture.",
             currentStatus = AnarchistStatus.ALLOWED,
             wasAskedBefore = true
         )
@@ -54,7 +54,7 @@ object PreviewMocks {
             description = "Required for high-precision background tasks.",
             apiRange = "API 31+",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\" />"),
-            rationaleLong = "Cannot be granted via standard dialog; requires settings navigation.",
+            supportingRationale = "Cannot be granted via standard dialog; requires settings navigation.",
             isManualOnly = true, // Shows orange/red button immediately
             currentStatus = AnarchistStatus.DENIED,
             wasAskedBefore = false
@@ -74,7 +74,7 @@ object PreviewMocks {
                 "<uses-permission android:name=\"android.permission.CAMERA\" />",
                 "<uses-permission android:name=\"android.permission.RECORD_AUDIO\" />"
             ),
-            rationaleLong = "Demonstrates multi-permission request handling.",
+            supportingRationale = "Demonstrates multi-permission request handling.",
             currentStatus = AnarchistStatus.DENIED,
             wasAskedBefore = true
         )

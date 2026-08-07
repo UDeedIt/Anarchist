@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -40,23 +41,33 @@ object Anarchist {
         val statusMap = hashMapOf<String, AnarchistStatus>()
 
         permissions.forEach { permission ->
-            if (isGranted(activity, permission)) {
-                // Clear history if permission is now granted
+            // Check the REAL system status first
+            val systemGranted = isGranted(activity, permission)
+
+            if (systemGranted) {
+                /**
+                 * If the system says it is granted, we clear
+                 * our internal 'requested' flag. This handles cases where a
+                 * user allows a previously denied permission.
+                 */
                 prefs.clearRequestedFlag(permission)
                 statusMap[permission] = AnarchistStatus.ALLOWED
 
-            } else {
+            }  else {
+                /**
+                 * If the system says it is NOT granted,
+                 * we check our history to see if it's a first-time deny
+                 * or a permanent block.
+                 */
                 val shouldShowRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
                 val wasAskedBefore = prefs.isRequestedBefore(permission)
 
                 statusMap[permission] = when {
-                    // System says we should explain why we need it
                     shouldShowRationale -> AnarchistStatus.DENIED
-                    // System won't show the dialog anymore
                     wasAskedBefore -> AnarchistStatus.DENIED_PERMANENTLY
-                    // First time or standard denial
                     else -> AnarchistStatus.DENIED
                 }
+
             }
         }
 
@@ -97,13 +108,38 @@ object Anarchist {
     /**
      * Checks if a specific permission is currently granted by the system.
      *
+     * Supporting Logic: Standard [ContextCompat.checkSelfPermission] only works
+     * for dangerous permissions. This function is enhanced to route the check
+     * to the appropriate system service based on the permission string
+     * (e.g. AlarmManager for Exact Alarms).
+     *
      * @param context The context used for the system check.
      * @param permission The manifest permission string to verify.
-     * @return True if [PackageManager.PERMISSION_GRANTED] is returned, false otherwise.
+     * @return True if the permission is currently granted, false otherwise.
      */
     private fun isGranted(context: Context, permission: String): Boolean {
-        return ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        return when (permission) {
+            // Supporting Case: Exact Alarms (API 31+)
+            "android.permission.SCHEDULE_EXACT_ALARM" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                    alarmManager.canScheduleExactAlarms()
+
+                } else {
+                    true // Implicitly allowed on older versions
+                }
+            }
+
+            // Default Case: Standard dangerous permissions
+            else -> {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    permission
+                ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
     }
+
 
     /**
      * Triggers the standard Android system permission dialog for a list of permissions.
@@ -160,5 +196,59 @@ object Anarchist {
      */
     fun wasAskedBefore(context: Context, permission: String): Boolean {
         return AnarchistPreference(context).isRequestedBefore(permission)
+    }
+
+
+    /**
+     * Checks the system status of a 'Special' permission.
+     *
+     * D2D Supporting Logic: Unlike standard dangerous permissions, special
+     * permissions (such as Exact Alarms or System Overlays) require unique
+     * system service checks. This function provides a unified entry point
+     * for these non-standard verifications.
+     *
+     * @param context The context used to access system services.
+     * @param permission The manifest permission string to verify.
+     * @return True if the permission is currently granted by the system, false otherwise.
+     */
+    fun isSpecialPermissionGranted(context: Context, permission: String): Boolean {
+        return isGranted(context, permission)
+    }
+
+    /**
+     * Specialized utility to open specific system settings pages for permissions
+     * that require manual intervention (e.g., Exact Alarms).
+     *
+     * Supporting Logic: If a specialized intent fails or is not supported by the
+     * current API level, the function falls back to the general App Info settings
+     * to ensure the user is never left on a dead screen.
+     *
+     * @param context The context used to start the intent.
+     * @param manifestString The specific permission string requiring the settings jump.
+     */
+    fun openSpecialSettings(context: Context, manifestString: String) {
+        val intent = when (manifestString) {
+            "android.permission.SCHEDULE_EXACT_ALARM" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                } else null
+            }
+            else -> null
+        }
+
+        try {
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            } else {
+                // Fallback for permissions without specific intent mapping
+                openSettings(context)
+            }
+        } catch (e: Exception) {
+            // Final safety fallback to ensure the button always performs an action
+            openSettings(context)
+        }
     }
 }
