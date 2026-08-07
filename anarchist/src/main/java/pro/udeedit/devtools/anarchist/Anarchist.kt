@@ -41,23 +41,33 @@ object Anarchist {
         val statusMap = hashMapOf<String, AnarchistStatus>()
 
         permissions.forEach { permission ->
-            if (isGranted(activity, permission)) {
-                // Clear history if permission is now granted
+            // Check the REAL system status first
+            val systemGranted = isGranted(activity, permission)
+
+            if (systemGranted) {
+                /**
+                 * If the system says it is granted, we clear
+                 * our internal 'requested' flag. This handles cases where a
+                 * user allows a previously denied permission.
+                 */
                 prefs.clearRequestedFlag(permission)
                 statusMap[permission] = AnarchistStatus.ALLOWED
 
-            } else {
+            }  else {
+                /**
+                 * If the system says it is NOT granted,
+                 * we check our history to see if it's a first-time deny
+                 * or a permanent block.
+                 */
                 val shouldShowRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
                 val wasAskedBefore = prefs.isRequestedBefore(permission)
 
                 statusMap[permission] = when {
-                    // System says we should explain why we need it
                     shouldShowRationale -> AnarchistStatus.DENIED
-                    // System won't show the dialog anymore
                     wasAskedBefore -> AnarchistStatus.DENIED_PERMANENTLY
-                    // First time or standard denial
                     else -> AnarchistStatus.DENIED
                 }
+
             }
         }
 
