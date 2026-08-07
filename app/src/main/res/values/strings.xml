@@ -1,6 +1,7 @@
 <resources>
 
     <string name="app_name">Anarchist Demo</string>
+    <string name="app_slogan">"Everything is permitted."</string>
 
     <string name="dashboard_title">Anarchist Dashboard</string>
 
