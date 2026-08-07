@@ -17,9 +17,11 @@ android {
         applicationId = "pro.udeedit.devtools.anarchist.demo"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0 merge 3"
+        versionCode = 2
+        versionName = "1.0.0 merge 16"
 
+        // vc2, 1.0.0 merge 16 - work on ANARCH-17 mistakenly made on 'develop'
+        //      this branch will collect chnages made here.
         // test commit - correct commit message
         // vc 1.0.0 merge 2 - ANARCH-11 Implement Dashboard Orchestration and Navigation
         // vc 1.0.0 - initial complete permission's livecycle
