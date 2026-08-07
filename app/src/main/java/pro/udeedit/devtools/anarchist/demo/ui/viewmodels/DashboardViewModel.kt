@@ -15,14 +15,30 @@ import pro.udeedit.devtools.anarchist.demo.ui.navigation.Screen
 /**
  * ViewModel responsible for orchestrating the multi-tab Anarchist Dashboard.
  *
- * It manages the reactive state of permission features across Standard, Special,
- * and Bundled categories, ensuring real-time status synchronization with the Android system.
+ * Supporting Logic: This architecture utilizes a 'Master List' pattern to ensure
+ * Global Status Synchronization. By maintaining a single source of truth for all
+ * permissions, the UI can reflect system changes across all tabs simultaneously.
+ *
+ * @property currentScreen Reactive stream of the currently active navigation tab.
+ * @property permissionFeatures Reactive stream of permissions filtered for the active tab.
  */
 class DashboardViewModel : ViewModel() {
 
+    /**
+     * MASTER LIST: The absolute source of truth for the application session.
+     * Contains every permission feature from the registry with its current runtime status.
+     */
+    private val _allFeatures = MutableStateFlow<List<PermissionFeature>>(emptyList())
+
+
     // Tracks the currently selected navigation tab
     private val _currentScreen = MutableStateFlow<Screen>(Screen.Standard)
+
+    /**
+     * Publicly exposed state of the current navigation destination.
+     */
     val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
+
 
     // Internal reactive state container for the displayed permission list
     private val _permissionFeatures = MutableStateFlow<List<PermissionFeature>>(emptyList())
@@ -34,56 +50,79 @@ class DashboardViewModel : ViewModel() {
 
 
     init {
-        // Default initialization with standard permissions
-        loadTab(Screen.Standard)
+        /**
+         * INITIALIZATION:
+         * 1. Aggregates all categories from the PermissionRegistry into the master list.
+         * 2. Populates the initial visible list for the default 'Standard' tab.
+         */
+        _allFeatures.value = PermissionRegistry.getStandardPermissions() +
+                PermissionRegistry.getSpecialPermissions() +
+                PermissionRegistry.getGroupedPermissions()
+
+        updateVisibleList()
     }
 
 
     /**
      * Switches the dashboard content based on the selected navigation tab.
      *
-     * @param screen The target destination (Standard, Special, or Bundles).
+     * @param screen The target navigation destination.
      */
     fun selectTab(screen: Screen) {
         _currentScreen.value = screen
-        loadTab(screen)
+
+        // Triggers the filtering logic to update what the user sees
+        updateVisibleList()
     }
 
 
     /**
-     * Loads the specific permission set from the registry based on the provided screen.
+     * Filters the Master List to determine which features should be rendered
+     * in the current UI context.
+     *
+     * Supporting Logic: This replaces the old 'loadTab' function. Instead of
+     * fetching static data from the Registry, it filters the Master List which
+     * already contains the synchronized system statuses.
      */
-    private fun loadTab(screen: Screen) {
-        _permissionFeatures.value = when (screen) {
-            Screen.Standard -> PermissionRegistry.getStandardPermissions()
-            Screen.Special -> PermissionRegistry.getSpecialPermissions()
-            Screen.Bundles -> PermissionRegistry.getGroupedPermissions()
+    private fun updateVisibleList() {
+        val currentRoute = _currentScreen.value.route
+
+        _permissionFeatures.value = when (currentRoute) {
+            Screen.Standard.route -> _allFeatures.value.filter { feature ->
+                PermissionRegistry.getStandardPermissions().any { it.id == feature.id }
+            }
+            Screen.Special.route -> _allFeatures.value.filter { feature ->
+                PermissionRegistry.getSpecialPermissions().any { it.id == feature.id }
+            }
+            else -> _allFeatures.value.filter { feature ->
+                PermissionRegistry.getGroupedPermissions().any { it.id == feature.id }
+            }
         }
     }
 
 
     /**
-     * Synchronizes the status of all visible permissions with the system state.
+     * Synchronizes the status of EVERY permission in the project with the system state.
      *
-     * Supporting Logic: This is triggered on lifecycle resumptions to ensure the UI
-     * reflects manual changes made by the user in system settings.
+     * Supporting Logic: By iterating through the Master List (_allFeatures) instead
+     * of just the visible list, we ensure that if a user enables multiple permissions
+     * while in the system settings, they are all updated regardless of the active tab.
      *
      * @param activity The host activity required for system status checks.
      */
     fun refreshStatuses(activity: Activity) {
-        val updatedList = _permissionFeatures.value.map { feature ->
+        val updatedMasterList = _allFeatures.value.map { feature ->
             // Parse permissions (handles single strings or comma-separated bundles)
             val permissionsList = feature.manifestString.split(",").map { it.trim() }
 
             val result = Anarchist.checkAndRequestPermissions(
                 activity = activity,
                 permissions = permissionsList,
-                // Ensure the hashCode is positive and within 16-bit range
                 requestCode = feature.id.hashCode().let { if (it < 0) -it else it } % 65536,
                 checkStatusOnly = true
             )
 
-            // Check if at least one permission in the feature has been asked before
+            // Sync the 'wasAskedBefore' flag from the library persistence
             val asked = permissionsList.any { Anarchist.wasAskedBefore(activity, it) }
 
             feature.copy(
@@ -91,28 +130,24 @@ class DashboardViewModel : ViewModel() {
                 wasAskedBefore = asked
             )
         }
-        _permissionFeatures.value = updatedList
+
+        // Update the master list and immediately refresh the visible projection
+        _allFeatures.value = updatedMasterList
+        updateVisibleList()
     }
+
 
     /**
      * Triggers a system permission request or redirects to special settings.
+     *
+     * @param activity The host activity to handle the request result.
+     * @param feature The specific [PermissionFeature] being interacted with.
      */
     fun requestPermission(activity: Activity, feature: PermissionFeature) {
         if (feature.isManualOnly) {
-            /**
-             * SPECIAL PERMISSION LOGIC:
-             * Redirects directly to the specialized system settings page.
-             */
             Anarchist.openSpecialSettings(activity, feature.manifestString)
-
         } else {
-            /**
-             * STANDARD PERMISSION LOGIC:
-             * Triggers the system dialog.
-             */
             val permissionsList = feature.manifestString.split(",").map { it.trim() }
-
-            // FIX: Ensure the requestCode is positive and within 16-bit range to prevent crashes
             val safeRequestCode = feature.id.hashCode().let { if (it < 0) -it else it } % 65536
 
             val result = Anarchist.checkAndRequestPermissions(
@@ -122,60 +157,69 @@ class DashboardViewModel : ViewModel() {
                 checkStatusOnly = false
             )
 
-            updateFeatureInList(feature.id, result.finalStatus, true)
+            // Update the master list directly
+            updateFeatureInMasterList(feature.id, result.finalStatus, true)
         }
     }
 
 
     /**
-     * Resets the library's internal request history for a specific feature.
+     * Resets the internal request history for a specific feature.
      *
-     * Supporting Utility: Clears the 'requestedBefore' flag for all permissions
-     * associated with this feature to allow testing first-run scenarios.
+     * @param context Context required for preference modification.
+     * @param feature The specific permission feature to reset.
      */
     fun revokePermission(context: Context, feature: PermissionFeature) {
         val permissionsList = feature.manifestString.split(",").map { it.trim() }
 
+        // Reset the flag in the library's internal storage
         Anarchist.resetRequestHistory(context, permissionsList)
 
-        // Force UI reset to Denied state with no history
-        updateFeatureInList(feature.id, AnarchistStatus.DENIED, false)
+        // Force UI reset to Denied state in the master list
+        updateFeatureInMasterList(feature.id, AnarchistStatus.DENIED, false)
     }
 
 
     /**
-     * Internal helper to perform a targeted update on a specific list item.
+     * Internal helper to update a specific item in the Master List and sync the view.
+     *
+     * @param id The unique identifier of the feature to update.
+     * @param status The new [AnarchistStatus] to apply.
+     * @param wasAsked The new value for the 'Asked Before' flag.
      */
-    private fun updateFeatureInList(id: String, status: AnarchistStatus, wasAsked: Boolean) {
-        _permissionFeatures.value = _permissionFeatures.value.map {
+    private fun updateFeatureInMasterList(id: String, status: AnarchistStatus, wasAsked: Boolean) {
+        _allFeatures.value = _allFeatures.value.map {
             if (it.id == id) {
                 it.copy(currentStatus = status, wasAskedBefore = wasAsked)
             } else {
                 it
             }
         }
+
+        // Ensure the change is reflected in the current tab
+        updateVisibleList()
     }
 
+
     /**
-     * Resets the request history for every permission defined in the registry.
+     * Resets the request history for every permission globally across all categories.
      *
-     * D2D Supporting Utility: Clears the 'asked before' flag globally,
-     * restoring the application to a fresh-install state for all categories.
+     * @param context Context required to access internal library storage.
      */
     fun resetAllHistory(context: Context) {
-        // Collect all manifest strings from all registry categories
-        val allPermissions = PermissionRegistry.getStandardPermissions().map { it.manifestString } +
-                PermissionRegistry.getSpecialPermissions().map { it.manifestString } +
-                PermissionRegistry.getGroupedPermissions().map { it.manifestString }
+        // Collect every permission string from the current master list
+        val flatList = _allFeatures.value
+            .flatMap { it.manifestString.split(",") }
+            .map { it.trim() }
+            .distinct()
 
-        // Split bundles and flatten into a single list of unique permissions
-        val flatList = allPermissions.flatMap { it.split(",") }.map { it.trim() }.distinct()
-
-        // Trigger the library reset
         Anarchist.resetRequestHistory(context, flatList)
 
-        // Refresh the current UI state immediately
-        // Note: activity check is omitted here as we only need context for reset
-        loadTab(_currentScreen.value)
+        // Reset the master list objects to their initial state
+        _allFeatures.value = _allFeatures.value.map {
+            it.copy(currentStatus = AnarchistStatus.DENIED, wasAskedBefore = false)
+        }
+
+        updateVisibleList()
     }
 }
