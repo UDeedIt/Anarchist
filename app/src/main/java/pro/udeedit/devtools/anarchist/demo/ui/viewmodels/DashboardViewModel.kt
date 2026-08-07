@@ -2,6 +2,7 @@ package pro.udeedit.devtools.anarchist.demo.ui.viewmodels
 
 import android.app.Activity
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,10 +20,16 @@ import pro.udeedit.devtools.anarchist.demo.ui.navigation.Screen
  * Global Status Synchronization. By maintaining a single source of truth for all
  * permissions, the UI can reflect system changes across all tabs simultaneously.
  *
+ * @param savedStateHandle System-provided handle to save and restore UI state.
  * @property currentScreen Reactive stream of the currently active navigation tab.
  * @property permissionFeatures Reactive stream of permissions filtered for the active tab.
  */
-class DashboardViewModel : ViewModel() {
+class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
+
+    companion object {
+        // Unique key for the navigation route in the saved state map
+        private const val KEY_ACTIVE_TAB = "active_tab_route"
+    }
 
     /**
      * MASTER LIST: The absolute source of truth for the application session.
@@ -32,7 +39,12 @@ class DashboardViewModel : ViewModel() {
 
 
     // Tracks the currently selected navigation tab
-    private val _currentScreen = MutableStateFlow<Screen>(Screen.Standard)
+    private val _currentScreen = MutableStateFlow<Screen>(
+        savedStateHandle.get<String>(KEY_ACTIVE_TAB)?.let { savedRoute ->
+            // Reconstruct the Screen object from the saved string route
+            pro.udeedit.devtools.anarchist.demo.ui.navigation.navItems.find { it.route == savedRoute }
+        } ?: Screen.Standard // Default if nothing was saved
+    )
 
     /**
      * Publicly exposed state of the current navigation destination.
@@ -70,6 +82,9 @@ class DashboardViewModel : ViewModel() {
      */
     fun selectTab(screen: Screen) {
         _currentScreen.value = screen
+
+        // 3. Save the route string so it survives process death
+        savedStateHandle[KEY_ACTIVE_TAB] = screen.route
 
         // Triggers the filtering logic to update what the user sees
         updateVisibleList()
