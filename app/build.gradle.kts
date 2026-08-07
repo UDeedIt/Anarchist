@@ -18,9 +18,9 @@ android {
         minSdk = 24
         targetSdk = 37
         versionCode = 2
-        versionName = "1.0.0 merge 16"
+        versionName = "1.0.0 merge 19"
 
-        // vc2, 1.0.0 merge 16 - work on ANARCH-17 mistakenly made on 'develop'
+        // vc3, 1.0.0 merge 19 - finished ANARCH-6 Anarchist Library Core
         //      this branch will collect chnages made here.
         // test commit - correct commit message
         // vc 1.0.0 merge 2 - ANARCH-11 Implement Dashboard Orchestration and Navigation
