@@ -1,9 +1,26 @@
 package pro.udeedit.devtools.anarchist.demo.data.registry
 
 import android.Manifest
+import android.os.Build
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.*
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_BATTERY_OPTIMIZATION
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CALENDAR
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CAMERA
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CONTACTS_READ
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CONTACTS_WRITE
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_EXACT_ALARM
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_LOCATION_BUNDLE
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_LOCATION_COARSE
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_LOCATION_FINE
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_MEDIA_BUNDLE
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_MEDIA_IMAGES
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_MICROPHONE
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_NOTIFICATIONS
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_PERSONAL_DATA_BUNDLE
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_SYSTEM_OVERLAY
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_USAGE_STATS
+import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_WRITE_SETTINGS
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 
 /**
@@ -106,14 +123,19 @@ object PermissionRegistry {
         ),
 
         PermissionFeature(
-            id = ID_BODY_SENSORS,
-            title = "Body Sensors",
-            manifestString = Manifest.permission.BODY_SENSORS,
-            icon = Icons.Default.MonitorHeart,
-            description = "Access to health data from hardware sensors (e.g. Heart Rate).",
-            apiRange = "API 20+ (Runtime since 23).",
-            manifestTags = listOf("<uses-permission android:name=\"android.permission.BODY_SENSORS\" />"),
-            supportingRationale = "Provides access to real-time physiological data for health features."
+            id = ID_MEDIA_IMAGES,
+            title = "Media Library",
+            //noinspection NewApi
+            manifestString = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Manifest.permission.READ_MEDIA_IMAGES
+            } else {
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            },
+            icon = Icons.Default.PhotoLibrary,
+            description = "Access to the device's image and photo gallery.",
+            apiRange = "Runtime since API 23. Granular media since API 33.",
+            manifestTags = listOf("<uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\" />"),
+            supportingRationale = "Required to demonstrate access to the system photo library."
         )
     )
 
@@ -144,6 +166,47 @@ object PermissionRegistry {
             supportingRationale = "Required for features that display persistent UI over other apps.",
             isManualOnly = true,
             manualEnablementGuidance = "1. Find 'Anarchist Demo' in the list.\n2. Toggle 'Allow display over other apps' to ON."
+        ),
+
+        PermissionFeature(
+            id = ID_WRITE_SETTINGS,
+            title = "Modify System Settings",
+            manifestString = Manifest.permission.WRITE_SETTINGS,
+            icon = Icons.Default.Settings,
+            description = "Allows the application to modify system-level settings (e.g. Brightness).",
+            apiRange = "All API levels.",
+            manifestTags = listOf("<uses-permission android:name=\"android.permission.WRITE_SETTINGS\" />"),
+            supportingRationale = "Demonstrates the ability to adjust global system parameters programmatically.",
+            isManualOnly = true,
+            manualEnablementGuidance = "1. Locate 'Anarchist Demo' in the settings list.\n2. Toggle 'Allow modifying system settings' to ON."
+        ),
+
+        PermissionFeature(
+            id = ID_USAGE_STATS,
+            title = "Usage Stats Access",
+            //noinspection NewApi
+            manifestString = Manifest.permission.PACKAGE_USAGE_STATS,
+            icon = Icons.Default.Insights,
+            description = "Allows monitoring of application usage and engagement metrics.",
+            apiRange = "API 21 (Lollipop) and above.",
+            manifestTags = listOf("<uses-permission android:name=\"android.permission.PACKAGE_USAGE_STATS\" tools:ignore=\"ProtectedPermissions\" />"),
+            supportingRationale = "Used to demonstrate system-level analytic access. Allows the app to see which other apps are being used.",
+            isManualOnly = true,
+            manualEnablementGuidance = "1. Find 'Anarchist Demo' in the Usage Access list.\n2. Toggle 'Permit usage access' to ON."
+        ),
+
+        PermissionFeature(
+            id = ID_BATTERY_OPTIMIZATION,
+            title = "Battery Optimization",
+            //noinspection NewApi
+            manifestString = Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+            icon = Icons.Default.BatteryChargingFull,
+            description = "Requests to bypass system-level battery saving restrictions.",
+            apiRange = "API 23 (Marshmallow) and above.",
+            manifestTags = listOf("<uses-permission android:name=\"android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS\" />"),
+            supportingRationale = "Necessary for background tasks that must remain active during system Doze modes.",
+            isManualOnly = true,
+            manualEnablementGuidance = "1. Find 'Anarchist Demo' in the battery optimization list.\n2. Select 'Don't optimize'.\n3. Confirm to allow persistent background activity."
         )
     )
 
@@ -175,6 +238,21 @@ object PermissionRegistry {
                 "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />"
             ),
             supportingRationale = "Ensures the application has comprehensive spatial awareness."
+        ),
+
+        PermissionFeature(
+            id = ID_PERSONAL_DATA_BUNDLE,
+            title = "Personal Data Bundle",
+            // Unifying Contacts and Calendar into one request
+            manifestString = "${Manifest.permission.READ_CONTACTS}, ${Manifest.permission.READ_CALENDAR}",
+            icon = Icons.Default.FolderShared,
+            description = "Simultaneous request for Contacts and Calendar access.",
+            apiRange = "All API levels.",
+            manifestTags = listOf(
+                "<uses-permission android:name=\"android.permission.READ_CONTACTS\" />",
+                "<uses-permission android:name=\"android.permission.READ_CALENDAR\" />"
+            ),
+            supportingRationale = "Demonstrates the library's ability to consolidate privacy requests into a single user interaction."
         )
     )
 }

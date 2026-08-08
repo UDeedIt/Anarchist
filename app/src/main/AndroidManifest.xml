@@ -22,8 +22,8 @@
     <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
 
-    <!-- Health/Wearable data access -->
-    <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <!-- Replacing Body Sensors with Media Access -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
 
     <!--
