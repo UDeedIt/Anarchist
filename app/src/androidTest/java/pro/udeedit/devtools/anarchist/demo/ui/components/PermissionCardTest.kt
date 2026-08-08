@@ -1,6 +1,5 @@
 package pro.udeedit.devtools.anarchist.demo.ui.components
 
-import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import org.junit.Rule
 import org.junit.Test
@@ -8,6 +7,9 @@ import pro.udeedit.devtools.anarchist.AnarchistStatus
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertTrue
 
 class PermissionCardTest {
