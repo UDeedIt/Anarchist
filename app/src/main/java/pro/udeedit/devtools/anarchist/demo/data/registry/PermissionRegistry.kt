@@ -3,7 +3,23 @@ package pro.udeedit.devtools.anarchist.demo.data.registry
 import android.Manifest
 import android.os.Build
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.EditAttributes
+import androidx.compose.material.icons.filled.FolderShared
+import androidx.compose.material.icons.filled.GpsFixed
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PermMedia
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Settings
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_BATTERY_OPTIMIZATION
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CALENDAR
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_CAMERA
@@ -190,7 +206,8 @@ object PermissionRegistry {
             description = "Allows monitoring of application usage and engagement metrics.",
             apiRange = "API 21 (Lollipop) and above.",
             manifestTags = listOf("<uses-permission android:name=\"android.permission.PACKAGE_USAGE_STATS\" tools:ignore=\"ProtectedPermissions\" />"),
-            supportingRationale = "Used to demonstrate system-level analytic access. Allows the app to see which other apps are being used.",
+            supportingRationale = "Used to demonstrate system-level analytic access. " +
+                    "Allows the app to see which other apps are being used.",
             isManualOnly = true,
             manualEnablementGuidance = "1. Find 'Anarchist Demo' in the Usage Access list.\n2. Toggle 'Permit usage access' to ON."
         ),
@@ -206,7 +223,8 @@ object PermissionRegistry {
             manifestTags = listOf("<uses-permission android:name=\"android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS\" />"),
             supportingRationale = "Necessary for background tasks that must remain active during system Doze modes.",
             isManualOnly = true,
-            manualEnablementGuidance = "1. Find 'Anarchist Demo' in the battery optimization list.\n2. Select 'Don't optimize'.\n3. Confirm to allow persistent background activity."
+            manualEnablementGuidance = "1. Find 'Anarchist Demo' in the battery optimization list.\n" +
+                    "2. Select 'Don't optimize'.\n3. Confirm to allow persistent background activity."
         )
     )
 
@@ -252,7 +270,8 @@ object PermissionRegistry {
                 "<uses-permission android:name=\"android.permission.READ_CONTACTS\" />",
                 "<uses-permission android:name=\"android.permission.READ_CALENDAR\" />"
             ),
-            supportingRationale = "Demonstrates the library's ability to consolidate privacy requests into a single user interaction."
+            supportingRationale = "Demonstrates the library's ability to consolidate " +
+                    "privacy requests into a single user interaction."
         )
     )
 }

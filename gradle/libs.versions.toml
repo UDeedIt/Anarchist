@@ -22,6 +22,7 @@ datastore = "1.2.1"
 datastorePreferences = "1.2.1"
 dokka = "2.2.0"
 mockito = "5.11.0" # Current stable version for 2026
+detekt = "1.23.8"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -48,4 +49,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

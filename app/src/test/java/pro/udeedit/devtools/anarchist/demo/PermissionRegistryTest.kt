@@ -1,9 +1,10 @@
-package pro.udeedit.devtools.anarchist.demo.data.registry
+package pro.udeedit.devtools.anarchist.demo
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds
+import pro.udeedit.devtools.anarchist.demo.data.registry.PermissionRegistry
 
 /**
  * Unit tests to verify the integrity of the Permission Registry.

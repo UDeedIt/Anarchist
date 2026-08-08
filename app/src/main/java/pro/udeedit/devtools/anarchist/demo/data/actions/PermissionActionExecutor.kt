@@ -101,6 +101,7 @@ object PermissionActionExecutor {
      * Launches the system camera intent.
      */
     private fun openCamera(context: Context) {
+        @Suppress("TooGenericExceptionCaught") // Safe for Intent fallback logic
         try {
             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -126,6 +127,7 @@ object PermissionActionExecutor {
     /**
      * Launches the system voice recorder or audio capture intent.
      */
+    @Suppress("TooGenericExceptionCaught")
     private fun openVoiceRecorder(context: Context) {
         val intent = Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -166,6 +168,7 @@ object PermissionActionExecutor {
     /**
      * Launches the system gallery to view images.
      */
+    @Suppress("TooGenericExceptionCaught")
     private fun openGallery(context: Context) {
         val intent = Intent(Intent.ACTION_VIEW).apply {
             type = "image/*"
