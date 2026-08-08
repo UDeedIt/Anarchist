@@ -2,21 +2,78 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Standard Permission -->
-    <uses-permission android:name="android.permission.CAMERA" />
-
-    <!-- Part of the Media Bundle -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <!-- API 33+ Notification Permission -->
+    <!--
+      STANDARD RUNTIME PERMISSIONS (🟢 Standard Tab)
+      These follow the standard system request dialog flow.
+    -->
+    <!-- API 33+: Essential for showing any notification -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Special Permission for Exact Alarms (API 31+) -->
+    <!-- Standard hardware access permissions -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Location permissions (Fine includes Coarse implicitly) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Personal Data access -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+
+    <!-- Health/Wearable data access -->
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
+
+
+    <!--
+      SPECIAL SYSTEM PERMISSIONS (🟠 Special Tab)
+      These require manual user intervention in sub-settings pages.
+    -->
+
+    <!-- API 31+: Required for exact-timing alarms and reminders -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
+    <!-- Required for drawing Overlays over other applications -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
+    <!-- Required to modify system-level settings -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+
+
+    <!--
+      Advanced System Stats access.
+      tools:ignore is used because this is a restricted/signature permission
+      often used for developer-centric analytics tools.
+    -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- Note: Notification access and Battery Optimization usually don't
+         always need a Manifest tag but often use specific Settings Intents. -->
+
+
+    <!--
+      HARDWARE FEATURE DECLARATIONS
+      D2D Supporting Logic: We set required="false" to ensure maximum
+      device compatibility. This allows the demo to be installed on devices
+      lacking specific hardware, while our library logic handles the
+      runtime verification.
+    -->
+
+    <!-- Required for Camera Access demonstration -->
     <uses-feature
         android:name="android.hardware.camera"
+        android:required="false" />
+
+    <!-- Required for Microphone/Audio demonstration -->
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+
+    <!-- Required for GPS/Fine Location demonstration -->
+    <uses-feature
+        android:name="android.hardware.location.gps"
         android:required="false" />
 
 
@@ -28,7 +85,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Anarchist">
+        android:theme="@style/Theme.Anarchist"
+        tools:targetApi="35">
 
         <activity
             android:name=".ui.MainActivity"

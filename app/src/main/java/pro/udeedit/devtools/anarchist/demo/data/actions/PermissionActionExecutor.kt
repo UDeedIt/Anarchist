@@ -41,10 +41,13 @@ object PermissionActionExecutor {
             ID_NOTIFICATIONS -> sendTestNotification(context)
             ID_CAMERA -> openCamera(context)
             ID_EXACT_ALARM -> triggerAlarmTest(context)
-
-//            else -> { /* No action defined */ }
+            FeatureIds.ID_LOCATION -> {
+                Toast.makeText(context, "Location logic triggered: Reading GPS...", Toast.LENGTH_SHORT).show()
+            }
+            FeatureIds.ID_MICROPHONE -> {
+                Toast.makeText(context, "Microphone logic triggered: Listening...", Toast.LENGTH_SHORT).show()
+            }
             else -> Toast.makeText(context, "No action defined for ${feature.id}", Toast.LENGTH_SHORT).show()
-
         }
     }
 
