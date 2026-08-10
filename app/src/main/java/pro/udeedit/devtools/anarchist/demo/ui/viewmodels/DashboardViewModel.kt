@@ -24,8 +24,9 @@ import pro.udeedit.devtools.anarchist.demo.ui.navigation.Screen
  * @property currentScreen Reactive stream of the currently active navigation tab.
  * @property permissionFeatures Reactive stream of permissions filtered for the active tab.
  */
-class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
-
+class DashboardViewModel(
+    private val savedStateHandle: SavedStateHandle,
+) : ViewModel() {
     companion object {
         // Unique key for the navigation route in the saved state map
         private const val KEY_ACTIVE_TAB = "active_tab_route"
@@ -37,20 +38,20 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
      */
     private val _allFeatures = MutableStateFlow<List<PermissionFeature>>(emptyList())
 
-
     // Tracks the currently selected navigation tab
-    private val _currentScreen = MutableStateFlow<Screen>(
-        savedStateHandle.get<String>(KEY_ACTIVE_TAB)?.let { savedRoute ->
-            // Reconstruct the Screen object from the saved string route
-            pro.udeedit.devtools.anarchist.demo.ui.navigation.navItems.find { it.route == savedRoute }
-        } ?: Screen.Standard // Default if nothing was saved
-    )
+    private val _currentScreen =
+        MutableStateFlow<Screen>(
+            savedStateHandle.get<String>(KEY_ACTIVE_TAB)?.let { savedRoute ->
+                // Reconstruct the Screen object from the saved string route
+                pro.udeedit.devtools.anarchist.demo.ui.navigation.navItems
+                    .find { it.route == savedRoute }
+            } ?: Screen.Standard, // Default if nothing was saved
+        )
 
     /**
      * Publicly exposed state of the current navigation destination.
      */
     val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
-
 
     // Internal reactive state container for the displayed permission list
     private val _permissionFeatures = MutableStateFlow<List<PermissionFeature>>(emptyList())
@@ -60,7 +61,6 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
      */
     val permissionFeatures: StateFlow<List<PermissionFeature>> = _permissionFeatures.asStateFlow()
 
-
     init {
         /**
          * INITIALIZATION:
@@ -68,12 +68,11 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
          * 2. Populates the initial visible list for the default 'Standard' tab.
          */
         _allFeatures.value = PermissionRegistry.getStandardPermissions() +
-                PermissionRegistry.getSpecialPermissions() +
-                PermissionRegistry.getGroupedPermissions()
+            PermissionRegistry.getSpecialPermissions() +
+            PermissionRegistry.getGroupedPermissions()
 
         updateVisibleList()
     }
-
 
     /**
      * Switches the dashboard content based on the selected navigation tab.
@@ -90,7 +89,6 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
         updateVisibleList()
     }
 
-
     /**
      * Filters the Master List to determine which features should be rendered
      * in the current UI context.
@@ -102,19 +100,22 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
     private fun updateVisibleList() {
         val currentRoute = _currentScreen.value.route
 
-        _permissionFeatures.value = when (currentRoute) {
-            Screen.Standard.route -> _allFeatures.value.filter { feature ->
-                PermissionRegistry.getStandardPermissions().any { it.id == feature.id }
+        _permissionFeatures.value =
+            when (currentRoute) {
+                Screen.Standard.route ->
+                    _allFeatures.value.filter { feature ->
+                        PermissionRegistry.getStandardPermissions().any { it.id == feature.id }
+                    }
+                Screen.Special.route ->
+                    _allFeatures.value.filter { feature ->
+                        PermissionRegistry.getSpecialPermissions().any { it.id == feature.id }
+                    }
+                else ->
+                    _allFeatures.value.filter { feature ->
+                        PermissionRegistry.getGroupedPermissions().any { it.id == feature.id }
+                    }
             }
-            Screen.Special.route -> _allFeatures.value.filter { feature ->
-                PermissionRegistry.getSpecialPermissions().any { it.id == feature.id }
-            }
-            else -> _allFeatures.value.filter { feature ->
-                PermissionRegistry.getGroupedPermissions().any { it.id == feature.id }
-            }
-        }
     }
-
 
     /**
      * Synchronizes the status of EVERY permission in the project with the system state.
@@ -126,31 +127,32 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
      * @param activity The host activity required for system status checks.
      */
     fun refreshStatuses(activity: Activity) {
-        val updatedMasterList = _allFeatures.value.map { feature ->
-            // Parse permissions (handles single strings or comma-separated bundles)
-            val permissionsList = feature.manifestString.split(",").map { it.trim() }
+        val updatedMasterList =
+            _allFeatures.value.map { feature ->
+                // Parse permissions (handles single strings or comma-separated bundles)
+                val permissionsList = feature.manifestString.split(",").map { it.trim() }
 
-            val result = Anarchist.checkAndRequestPermissions(
-                activity = activity,
-                permissions = permissionsList,
-                requestCode = feature.id.hashCode().let { if (it < 0) -it else it } % 65536,
-                checkStatusOnly = true
-            )
+                val result =
+                    Anarchist.checkAndRequestPermissions(
+                        activity = activity,
+                        permissions = permissionsList,
+                        requestCode = feature.id.hashCode().let { if (it < 0) -it else it } % 65536,
+                        checkStatusOnly = true,
+                    )
 
-            // Sync the 'wasAskedBefore' flag from the library persistence
-            val asked = permissionsList.any { Anarchist.wasAskedBefore(activity, it) }
+                // Sync the 'wasAskedBefore' flag from the library persistence
+                val asked = permissionsList.any { Anarchist.wasAskedBefore(activity, it) }
 
-            feature.copy(
-                currentStatus = result.finalStatus,
-                wasAskedBefore = asked
-            )
-        }
+                feature.copy(
+                    currentStatus = result.finalStatus,
+                    wasAskedBefore = asked,
+                )
+            }
 
         // Update the master list and immediately refresh the visible projection
         _allFeatures.value = updatedMasterList
         updateVisibleList()
     }
-
 
     /**
      * Triggers a system permission request or redirects to special settings.
@@ -158,25 +160,28 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
      * @param activity The host activity to handle the request result.
      * @param feature The specific [PermissionFeature] being interacted with.
      */
-    fun requestPermission(activity: Activity, feature: PermissionFeature) {
+    fun requestPermission(
+        activity: Activity,
+        feature: PermissionFeature,
+    ) {
         if (feature.isManualOnly) {
             Anarchist.openSpecialSettings(activity, feature.manifestString)
         } else {
             val permissionsList = feature.manifestString.split(",").map { it.trim() }
             val safeRequestCode = feature.id.hashCode().let { if (it < 0) -it else it } % 65536
 
-            val result = Anarchist.checkAndRequestPermissions(
-                activity = activity,
-                permissions = permissionsList,
-                requestCode = safeRequestCode,
-                checkStatusOnly = false
-            )
+            val result =
+                Anarchist.checkAndRequestPermissions(
+                    activity = activity,
+                    permissions = permissionsList,
+                    requestCode = safeRequestCode,
+                    checkStatusOnly = false,
+                )
 
             // Update the master list directly
             updateFeatureInMasterList(feature.id, result.finalStatus, true)
         }
     }
-
 
     /**
      * Resets the internal request history for a specific feature.
@@ -184,7 +189,10 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
      * @param context Context required for preference modification.
      * @param feature The specific permission feature to reset.
      */
-    fun revokePermission(context: Context, feature: PermissionFeature) {
+    fun revokePermission(
+        context: Context,
+        feature: PermissionFeature,
+    ) {
         val permissionsList = feature.manifestString.split(",").map { it.trim() }
 
         // Reset the flag in the library's internal storage
@@ -194,7 +202,6 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
         updateFeatureInMasterList(feature.id, AnarchistStatus.DENIED, false)
     }
 
-
     /**
      * Internal helper to update a specific item in the Master List and sync the view.
      *
@@ -202,19 +209,23 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
      * @param status The new [AnarchistStatus] to apply.
      * @param wasAsked The new value for the 'Asked Before' flag.
      */
-    private fun updateFeatureInMasterList(id: String, status: AnarchistStatus, wasAsked: Boolean) {
-        _allFeatures.value = _allFeatures.value.map {
-            if (it.id == id) {
-                it.copy(currentStatus = status, wasAskedBefore = wasAsked)
-            } else {
-                it
+    private fun updateFeatureInMasterList(
+        id: String,
+        status: AnarchistStatus,
+        wasAsked: Boolean,
+    ) {
+        _allFeatures.value =
+            _allFeatures.value.map {
+                if (it.id == id) {
+                    it.copy(currentStatus = status, wasAskedBefore = wasAsked)
+                } else {
+                    it
+                }
             }
-        }
 
         // Ensure the change is reflected in the current tab
         updateVisibleList()
     }
-
 
     /**
      * Resets the request history for every permission globally across all categories.
@@ -223,17 +234,19 @@ class DashboardViewModel(private val savedStateHandle: SavedStateHandle) : ViewM
      */
     fun resetAllHistory(context: Context) {
         // Collect every permission string from the current master list
-        val flatList = _allFeatures.value
-            .flatMap { it.manifestString.split(",") }
-            .map { it.trim() }
-            .distinct()
+        val flatList =
+            _allFeatures.value
+                .flatMap { it.manifestString.split(",") }
+                .map { it.trim() }
+                .distinct()
 
         Anarchist.resetRequestHistory(context, flatList)
 
         // Reset the master list objects to their initial state
-        _allFeatures.value = _allFeatures.value.map {
-            it.copy(currentStatus = AnarchistStatus.DENIED, wasAskedBefore = false)
-        }
+        _allFeatures.value =
+            _allFeatures.value.map {
+                it.copy(currentStatus = AnarchistStatus.DENIED, wasAskedBefore = false)
+            }
 
         updateVisibleList()
     }
