@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -75,82 +76,20 @@ fun PermissionCard(
 
     // --- D2D SUPPORTING INFORMATION DIALOG ---
     if (showInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { showInfoDialog = false },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(feature.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(8.dp))
-                    Text(feature.title)
-                }
-            },
-            text = {
-                Column {
-                    Text("Technical Metadata", style = MaterialTheme.typography.titleSmall)
-                    Text("API Range: ${feature.apiRange}", style = MaterialTheme.typography.bodySmall)
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Text("Manifest Requirements", style = MaterialTheme.typography.titleSmall)
-                    // Iterating through required manifest tags for developer reference
-                    feature.manifestTags.forEach { tag ->
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = MaterialTheme.shapes.small,
-                            modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
-                        ) {
-                            Text(
-                                text = tag,
-                                modifier = Modifier.padding(8.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Text("Supporting Rationale", style = MaterialTheme.typography.titleSmall)
-                    Text(feature.supportingRationale, style = MaterialTheme.typography.bodyMedium)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showInfoDialog = false }) { Text("Close") }
-            },
+        PermissionInfoDialog(
+            feature = feature,
+            onDismiss = { showInfoDialog = false },
         )
     }
 
     // --- PRE-SETTINGS GUIDANCE DIALOG ---
-    // --- PRE-SETTINGS GUIDANCE DIALOG ---
     if (showGuidanceDialog) {
-        AlertDialog(
-            onDismissRequest = { showGuidanceDialog = false },
-            title = { Text(text = "How to enable ${feature.title}") },
-            text = {
-                Text(
-                    text = feature.manualEnablementGuidance ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        /**
-                         * Supporting Logic:
-                         * 1. Close the dialog locally.
-                         * 2. Trigger the callback provided by the MainActivity.
-                         */
-                        showGuidanceDialog = false
-                        onOpenSettings()
-                    },
-                ) {
-                    Text("Go to Settings")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showGuidanceDialog = false }) {
-                    Text("Cancel")
-                }
+        PermissionGuidanceDialog(
+            feature = feature,
+            onDismiss = { showGuidanceDialog = false },
+            onConfirm = {
+                showGuidanceDialog = false
+                onOpenSettings()
             },
         )
     }
@@ -160,7 +99,8 @@ fun PermissionCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
+                .padding(vertical = 8.dp)
+                .testTag("permission_card_${feature.id}"),
         colors =
             CardDefaults.cardColors(
                 // Using a semi-transparent surface variant for a modern 'Cushy' feel
@@ -192,7 +132,10 @@ fun PermissionCard(
                 }
 
                 // D2D Supporting Info Button
-                IconButton(onClick = { showInfoDialog = true }) {
+                IconButton(
+                    onClick = { showInfoDialog = true },
+                    modifier = Modifier.testTag("btn_info_${feature.id}"),
+                ) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = "Technical implementation details",
@@ -352,6 +295,103 @@ private fun getStatusDescription(
         // Case 5: Fresh state
         else -> "System Status: UNKNOWN / NOT REQUESTED. Ready for first attempt."
     }
+
+/**
+ * A dialog that displays technical metadata and manifest requirements for a permission.
+ *
+ * @param feature The permission feature containing the metadata to display.
+ * @param onDismiss Callback to close the dialog.
+ */
+@Composable
+private fun PermissionInfoDialog(
+    feature: PermissionFeature,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = feature.icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+
+                Spacer(Modifier.width(12.dp))
+
+                Text(feature.title)
+            }
+        },
+        text = {
+            Column {
+                Text("Technical Metadata", style = MaterialTheme.typography.titleSmall)
+                Text("API Range: ${feature.apiRange}", style = MaterialTheme.typography.bodySmall)
+
+                Spacer(Modifier.height(16.dp))
+
+                Text("Manifest Requirements", style = MaterialTheme.typography.titleSmall)
+
+                feature.manifestTags.forEach { tag ->
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = tag,
+                            modifier = Modifier.padding(8.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                Text("Supporting Rationale", style = MaterialTheme.typography.titleSmall)
+                Text(feature.supportingRationale, style = MaterialTheme.typography.bodyMedium)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+    )
+}
+
+/**
+ * A dialog that provides step-by-step instructions for manual permission enablement.
+ *
+ * @param feature The permission feature containing the guidance text.
+ * @param onDismiss Callback to close the dialog.
+ * @param onConfirm Callback to proceed to the system settings intent.
+ */
+@Composable
+private fun PermissionGuidanceDialog(
+    feature: PermissionFeature,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "How to enable ${feature.title}") },
+        text = {
+            Text(
+                text = feature.manualEnablementGuidance ?: "",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Go to Settings")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
 
 // --- PREVIEWS ---
 
