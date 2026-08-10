@@ -38,7 +38,6 @@ import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
  * Every action is guarded by a final library status check.
  */
 object PermissionActionExecutor {
-
     private const val TAG = "PermissionActionExecutor"
     private const val DEMO_CHANNEL_ID = "anarchist_demo_channel"
 
@@ -48,7 +47,10 @@ object PermissionActionExecutor {
      * @param context The context required to trigger system intents or services.
      * @param feature The full [PermissionFeature] object containing status and ID.
      */
-    fun performAction(context: Context, feature: PermissionFeature) {
+    fun performAction(
+        context: Context,
+        feature: PermissionFeature,
+    ) {
         // Final safety check: ensure the action only runs if the library confirms ALLOWED status
         if (feature.currentStatus != AnarchistStatus.ALLOWED) {
             return
@@ -70,7 +72,6 @@ object PermissionActionExecutor {
 
             ID_MEDIA_IMAGES -> openGallery(context)
 
-
             // --- 🟠 SPECIAL ACTIONS ---
             ID_EXACT_ALARM -> triggerAlarmTest(context)
 
@@ -81,7 +82,6 @@ object PermissionActionExecutor {
             ID_USAGE_STATS -> openUsageAccessSettings(context)
 
             ID_BATTERY_OPTIMIZATION -> openBatteryOptimizationSettings(context)
-
 
             // --- 🔵 BUNDLE SUCCESS ACTIONS ---
             ID_MEDIA_BUNDLE -> handleBundleSuccess(context, "Audio & Video capabilities unlocked")
@@ -96,94 +96,91 @@ object PermissionActionExecutor {
         }
     }
 
-
     /**
      * Launches the system camera intent.
      */
     private fun openCamera(context: Context) {
         @Suppress("TooGenericExceptionCaught") // Safe for Intent fallback logic
         try {
-            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+            val intent =
+                Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
             context.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Error opening camera: ${e.message}")
         }
     }
 
-
     /**
      * Opens a map application at specific coordinates.
      */
     private fun openMapAtLocation(context: Context) {
-        val mapIntent = Intent(Intent.ACTION_VIEW, "geo:52.5200,13.4050?z=15".toUri()).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val mapIntent =
+            Intent(Intent.ACTION_VIEW, "geo:52.5200,13.4050?z=15".toUri()).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(mapIntent)
     }
-
 
     /**
      * Launches the system voice recorder or audio capture intent.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun openVoiceRecorder(context: Context) {
-        val intent = Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent =
+            Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         try {
             context.startActivity(intent)
-
         } catch (e: Exception) {
             Log.d(TAG, "ERROR: ${e.message}")
             Toast.makeText(context, "No audio recording app found", Toast.LENGTH_SHORT).show()
         }
     }
 
-
     /**
      * Opens the system contacts application.
      */
     private fun openContactsApp(context: Context) {
-        val intent = Intent(Intent.ACTION_VIEW, android.provider.ContactsContract.Contacts.CONTENT_URI).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW, android.provider.ContactsContract.Contacts.CONTENT_URI).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(intent)
     }
-
 
     /**
      * Opens the system calendar at the current time.
      */
     private fun openCalendarApp(context: Context) {
         val builder = "content://com.android.calendar/time/".toUri().buildUpon()
-        val intent = Intent(Intent.ACTION_VIEW).setData(builder.build()).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW).setData(builder.build()).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(intent)
     }
-
 
     /**
      * Launches the system gallery to view images.
      */
     @Suppress("TooGenericExceptionCaught")
     private fun openGallery(context: Context) {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            type = "image/*"
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
+        val intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                type = "image/*"
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
 
         try {
             context.startActivity(intent)
-
         } catch (e: Exception) {
             Log.d(TAG, "ERROR: ${e.message}")
             Toast.makeText(context, "No gallery app found", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     /**
      * Triggers a high-priority notification to verify status.
@@ -192,24 +189,26 @@ object PermissionActionExecutor {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                DEMO_CHANNEL_ID,
-                "Anarchist Demo Actions",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
+            val channel =
+                NotificationChannel(
+                    DEMO_CHANNEL_ID,
+                    "Anarchist Demo Actions",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                )
             manager.createNotificationChannel(channel)
         }
 
-        val builder = NotificationCompat.Builder(context, DEMO_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Anarchist Success! 🏴‍☠️")
-            .setContentText("The permission action was performed successfully.")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
+        val builder =
+            NotificationCompat
+                .Builder(context, DEMO_CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Anarchist Success! 🏴‍☠️")
+                .setContentText("The permission action was performed successfully.")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
 
         manager.notify(1, builder.build())
     }
-
 
     /**
      * Demonstrates success for settings-based permissions.
@@ -218,40 +217,39 @@ object PermissionActionExecutor {
         Toast.makeText(context, "Exact Alarm functionality verified.", Toast.LENGTH_SHORT).show()
     }
 
-
     /**
      * Opens display settings where system write permissions
      * are often utilized (e.g., Brightness).
      */
     private fun openDisplaySettings(context: Context) {
-        val intent = Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent =
+            Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(intent)
     }
-
 
     /**
      * Opens the specific Usage Access settings page.
      */
     private fun openUsageAccessSettings(context: Context) {
-        val intent = Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent =
+            Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(intent)
     }
-
 
     /**
      * Redirects to the system battery optimization list.
      */
     private fun openBatteryOptimizationSettings(context: Context) {
-        val intent = Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent =
+            Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(intent)
     }
-
 
     /**
      * Verification for overlay permissions.
@@ -259,7 +257,6 @@ object PermissionActionExecutor {
     private fun verifyOverlayStatus(context: Context) {
         Toast.makeText(context, "System Overlay successfully authorized.", Toast.LENGTH_SHORT).show()
     }
-
 
     /**
      * Supporting Logic: Generic handler for successful bundle transactions.
@@ -270,8 +267,10 @@ object PermissionActionExecutor {
      * @param context UI Context for the Toast.
      * @param message The specific success message for the feature bundle.
      */
-    private fun handleBundleSuccess(context: Context, message: String) {
+    private fun handleBundleSuccess(
+        context: Context,
+        message: String,
+    ) {
         Toast.makeText(context, "Bundle Success: $message", Toast.LENGTH_LONG).show()
     }
-
 }

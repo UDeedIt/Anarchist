@@ -42,5 +42,5 @@ data class PermissionFeature(
     val currentStatus: AnarchistStatus = AnarchistStatus.DENIED,
     val isManualOnly: Boolean = false,
     val wasAskedBefore: Boolean = false,
-    val actionIfAllowed: ((Context) -> Unit)? = null
+    val actionIfAllowed: ((Context) -> Unit)? = null,
 )
