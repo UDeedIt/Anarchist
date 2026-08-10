@@ -24,9 +24,8 @@ sealed class Screen(
     val route: String,
     @get:StringRes val titleRes: Int,
     val icon: ImageVector,
-    @get:StringRes val contentDescriptionRes: Int
+    @get:StringRes val contentDescriptionRes: Int,
 ) {
-
     /**
      * Destination for standard dangerous permissions that utilize
      * the unified system request dialog.
@@ -35,7 +34,7 @@ sealed class Screen(
         "standard",
         R.string.tab_standard,
         Icons.AutoMirrored.Filled.List,
-        R.string.nav_desc_standard
+        R.string.nav_desc_standard,
     )
 
     /**
@@ -46,7 +45,7 @@ sealed class Screen(
         route = "special_permissions",
         titleRes = R.string.tab_special,
         icon = Icons.Default.Category,
-        R.string.nav_desc_special
+        R.string.nav_desc_special,
     )
 
     /**
@@ -57,15 +56,16 @@ sealed class Screen(
         route = "bundled_permissions",
         titleRes = R.string.tab_bundles,
         icon = Icons.Default.GridView,
-        R.string.nav_desc_bundles
+        R.string.nav_desc_bundles,
     )
 }
 
 /**
  * The complete collection of destinations for the primary navigation component.
  */
-val navItems = listOf(
-    Screen.Standard,
-    Screen.Special,
-    Screen.Bundles
-)
+val navItems =
+    listOf(
+        Screen.Standard,
+        Screen.Special,
+        Screen.Bundles,
+    )

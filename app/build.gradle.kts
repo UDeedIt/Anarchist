@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.kotlin.ktlint)
 }
 
 detekt {
@@ -11,13 +12,27 @@ detekt {
     buildUponDefaultConfig = true
 }
 
+/**
+ * Modern Ktlint configuration for the entire project.
+ * This block enforces the official Android Kotlin style guide.
+ */
+ktlint {
+    version.set("1.3.1") // Internal Ktlint engine version
+    android.set(true) // Enforces Android-specific spacing and rules
+    ignoreFailures.set(false) // Fails the build if style is incorrect
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+    }
+}
+
 android {
     namespace = "pro.udeedit.devtools.anarchist.demo"
 
     compileSdk {
-        version = release(37) {
-            minorApiLevel = 1
-        }
+        version =
+            release(37) {
+                minorApiLevel = 1
+            }
     }
 
     defaultConfig {
@@ -41,7 +56,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }

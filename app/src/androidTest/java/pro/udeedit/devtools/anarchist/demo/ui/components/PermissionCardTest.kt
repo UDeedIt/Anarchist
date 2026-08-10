@@ -1,19 +1,18 @@
 package pro.udeedit.devtools.anarchist.demo.ui.components
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import pro.udeedit.devtools.anarchist.AnarchistStatus
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import org.junit.Assert.assertTrue
 
 class PermissionCardTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -26,26 +25,27 @@ class PermissionCardTest {
     fun testPositive_GuidanceDialogTriggersCallback() {
         var settingsCalled = false
 
-        val mockFeature = PermissionFeature(
-            id = "TEST_POS",
-            title = "Guidance Test",
-            manifestString = "",
-            icon = Icons.Default.Info,
-            description = "Test Desc",
-            apiRange = "API 24+",
-            manifestTags = emptyList(),
-            supportingRationale = "Rationale",
-            manualEnablementGuidance = "Step 1: Test", // HAS guidance
-            isManualOnly = true,
-            currentStatus = AnarchistStatus.DENIED
-        )
+        val mockFeature =
+            PermissionFeature(
+                id = "TEST_POS",
+                title = "Guidance Test",
+                manifestString = "",
+                icon = Icons.Default.Info,
+                description = "Test Desc",
+                apiRange = "API 24+",
+                manifestTags = emptyList(),
+                supportingRationale = "Rationale",
+                manualEnablementGuidance = "Step 1: Test", // HAS guidance
+                isManualOnly = true,
+                currentStatus = AnarchistStatus.DENIED,
+            )
 
         composeTestRule.setContent {
             PermissionCard(
                 feature = mockFeature,
                 onRequest = {},
                 onOpenSettings = { settingsCalled = true },
-                onRevoke = {}
+                onRevoke = {},
             )
         }
 
@@ -69,26 +69,27 @@ class PermissionCardTest {
     fun testNegative_NoGuidanceBypassesDialog() {
         var settingsCalled = false
 
-        val mockFeature = PermissionFeature(
-            id = "TEST_NEG",
-            title = "No Guidance Test",
-            manifestString = "",
-            icon = Icons.Default.Info,
-            description = "Test Desc",
-            apiRange = "API 24+",
-            manifestTags = emptyList(),
-            supportingRationale = "Rationale",
-            manualEnablementGuidance = null, // NO guidance
-            isManualOnly = true,
-            currentStatus = AnarchistStatus.DENIED
-        )
+        val mockFeature =
+            PermissionFeature(
+                id = "TEST_NEG",
+                title = "No Guidance Test",
+                manifestString = "",
+                icon = Icons.Default.Info,
+                description = "Test Desc",
+                apiRange = "API 24+",
+                manifestTags = emptyList(),
+                supportingRationale = "Rationale",
+                manualEnablementGuidance = null, // NO guidance
+                isManualOnly = true,
+                currentStatus = AnarchistStatus.DENIED,
+            )
 
         composeTestRule.setContent {
             PermissionCard(
                 feature = mockFeature,
                 onRequest = {},
                 onOpenSettings = { settingsCalled = true },
-                onRevoke = {}
+                onRevoke = {},
             )
         }
 

@@ -37,14 +37,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pro.udeedit.devtools.anarchist.Anarchist
+import pro.udeedit.devtools.anarchist.demo.R
 import pro.udeedit.devtools.anarchist.demo.data.mocks.PreviewMocks
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 import pro.udeedit.devtools.anarchist.demo.ui.components.PermissionCard
 import pro.udeedit.devtools.anarchist.demo.ui.navigation.Screen
 import pro.udeedit.devtools.anarchist.demo.ui.navigation.navItems
 import pro.udeedit.devtools.anarchist.demo.ui.viewmodels.DashboardViewModel
-import pro.udeedit.devtools.anarchist.demo.R
-
 
 /**
  * Encapsulates all user interaction callbacks for the Anarchist Dashboard.
@@ -57,9 +56,8 @@ data class DashboardActions(
     val onRequest: (PermissionFeature) -> Unit,
     val onOpenSettings: (PermissionFeature) -> Unit,
     val onRevoke: (PermissionFeature) -> Unit,
-    val onResetAll: () -> Unit
+    val onResetAll: () -> Unit,
 )
-
 
 /**
  * Main Activity for the Anarchist Demo.
@@ -68,17 +66,15 @@ data class DashboardActions(
  * within a reactive, multi-tabbed dashboard environment.
  */
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             // Applying the project-standard theme wrapper
             AnarchistDemoTheme {
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     // Initializing the primary dashboard orchestration
                     AnarchistDashboard()
@@ -96,9 +92,7 @@ class MainActivity : ComponentActivity() {
  * monitors the Activity lifecycle to ensure real-time status synchronization.
  */
 @Composable
-fun AnarchistDashboard(
-    viewModel: DashboardViewModel = viewModel()
-) {
+fun AnarchistDashboard(viewModel: DashboardViewModel = viewModel()) {
     val context = LocalContext.current
     val activity = context as Activity
 
@@ -112,19 +106,19 @@ fun AnarchistDashboard(
     // State to control the visibility of the global Reset Confirmation Dialog
     var showResetDialog by remember { mutableStateOf(false) }
 
-
     /**
      * D2D SUPPORTING LOGIC: Lifecycle Resumption Sync
      * Attaches an observer to refresh permission statuses every time the user
      * returns to the application from system screens (settings or dialogs).
      */
     DisposableEffect(lifecycleOwner) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                // Perform a non-intrusive status scan
-                viewModel.refreshStatuses(activity)
+        val observer =
+            androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    // Perform a non-intrusive status scan
+                    viewModel.refreshStatuses(activity)
+                }
             }
-        }
 
         lifecycleOwner.lifecycle.addObserver(observer)
 
@@ -133,7 +127,6 @@ fun AnarchistDashboard(
         }
     }
 
-
     /**
      * INITIAL SYNCHRONIZATION:
      * Triggers a status refresh when the dashboard first enters the composition.
@@ -141,7 +134,6 @@ fun AnarchistDashboard(
     LaunchedEffect(Unit) {
         viewModel.refreshStatuses(activity)
     }
-
 
     /**
      * RESET CONFIRMATION DIALOG:
@@ -160,7 +152,7 @@ fun AnarchistDashboard(
                 }) {
                     Text(
                         text = stringResource(id = R.string.reset_confirm),
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             },
@@ -168,31 +160,30 @@ fun AnarchistDashboard(
                 TextButton(onClick = { showResetDialog = false }) {
                     Text(text = stringResource(id = R.string.reset_cancel))
                 }
-            }
+            },
         )
     }
-
 
     // Supporting Logic: Creating the actions container to reduce parameter count
-    val actions = remember(viewModel, activity, context) {
-        DashboardActions(
-            onTabSelected = { viewModel.selectTab(it) },
-            onRequest = { viewModel.requestPermission(activity, it) },
-            onOpenSettings = { feature ->
-                Anarchist.openSpecialSettings(context, feature.manifestString)
-            },
-            onRevoke = { viewModel.revokePermission(context, it) },
-            onResetAll = { showResetDialog = true }
-        )
-    }
-
+    val actions =
+        remember(viewModel, activity, context) {
+            DashboardActions(
+                onTabSelected = { viewModel.selectTab(it) },
+                onRequest = { viewModel.requestPermission(activity, it) },
+                onOpenSettings = { feature ->
+                    Anarchist.openSpecialSettings(context, feature.manifestString)
+                },
+                onRevoke = { viewModel.revokePermission(context, it) },
+                onResetAll = { showResetDialog = true },
+            )
+        }
 
     // Delegation to the stateless content renderer
     DashboardContent(
         title = stringResource(id = R.string.dashboard_title),
         permissions = permissions,
         currentScreen = currentScreen,
-        actions = actions
+        actions = actions,
     )
 }
 
@@ -214,7 +205,7 @@ fun DashboardContent(
     title: String,
     permissions: List<PermissionFeature>,
     currentScreen: Screen,
-    actions: DashboardActions
+    actions: DashboardActions,
 ) {
     Scaffold(
         topBar = {
@@ -229,14 +220,15 @@ fun DashboardContent(
                     IconButton(onClick = actions.onResetAll) {
                         Text(
                             text = "🏴‍☠️",
-                            style = MaterialTheme.typography.headlineSmall
+                            style = MaterialTheme.typography.headlineSmall,
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                )
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.primary,
+                    ),
             )
         },
         bottomBar = {
@@ -250,16 +242,16 @@ fun DashboardContent(
                         icon = {
                             Icon(
                                 imageVector = screen.icon,
-                                contentDescription = stringResource(id = screen.contentDescriptionRes)
+                                contentDescription = stringResource(id = screen.contentDescriptionRes),
                             )
                         },
                         label = { Text(text = stringResource(id = screen.titleRes)) },
                         selected = currentScreen == screen,
-                        onClick = { actions.onTabSelected(screen) }
+                        onClick = { actions.onTabSelected(screen) },
                     )
                 }
             }
-        }
+        },
     ) { padding ->
 
         /**
@@ -267,34 +259,32 @@ fun DashboardContent(
          * Efficiently renders a list of cards based on the active category.
          */
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
         ) {
-
             items(permissions) { feature ->
 
                 PermissionCard(
                     feature = feature,
                     onRequest = { actions.onRequest(feature) },
-
                     // Passing the feature down to the component
                     onOpenSettings = { actions.onOpenSettings(feature) },
-
-                    onRevoke = { actions.onRevoke(feature) }
+                    onRevoke = { actions.onRevoke(feature) },
                 )
             }
         }
     }
 }
 
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun AnarchistDashboard(
+// @OptIn(ExperimentalMaterial3Api::class)
+// @Composable
+// fun AnarchistDashboard(
 //    viewModel: DashboardViewModel = viewModel()
-//) {
+// ) {
 //    val context = LocalContext.current
 //    val activity = context as Activity
 //
@@ -380,8 +370,7 @@ fun DashboardContent(
 //            }
 //        }
 //    }
-//}
-
+// }
 
 /**
  * Basic Theme wrapper for the Demo components.
@@ -390,7 +379,6 @@ fun DashboardContent(
 fun AnarchistDemoTheme(content: @Composable () -> Unit) {
     MaterialTheme(content = content)
 }
-
 
 // --- DASHBOARD PREVIEWS ---
 
@@ -402,7 +390,7 @@ fun PreviewStandardTab() {
             title = "Anarchist Dashboard",
             permissions = PreviewMocks.mockStandardList,
             currentScreen = Screen.Standard,
-            actions = DashboardActions({}, {}, {}, {}, {})
+            actions = DashboardActions({}, {}, {}, {}, {}),
         )
     }
 }
@@ -415,7 +403,7 @@ fun PreviewSpecialTab() {
             title = "Anarchist Dashboard",
             permissions = PreviewMocks.mockSpecialList,
             currentScreen = Screen.Special,
-            actions = DashboardActions({}, {}, {}, {}, {})
+            actions = DashboardActions({}, {}, {}, {}, {}),
         )
     }
 }
@@ -428,7 +416,7 @@ fun PreviewBundlesTab() {
             title = "Anarchist Dashboard",
             permissions = PreviewMocks.mockBundlesList,
             currentScreen = Screen.Bundles,
-            actions = DashboardActions({}, {}, {}, {}, {})
+            actions = DashboardActions({}, {}, {}, {}, {}),
         )
     }
 }
