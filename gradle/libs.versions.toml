@@ -23,6 +23,7 @@ datastorePreferences = "1.2.1"
 dokka = "2.2.0"
 mockito = "5.11.0" # Current stable version for 2026
 detekt = "1.23.8"
+kaspresso = "1.5.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -43,6 +44,10 @@ androidx-compose-material3 = { group = "androidx.compose.material3", name = "mat
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+# Core Kaspresso library
+kaspresso = { group = "com.kaspersky.android-components", name = "kaspresso", version.ref = "kaspresso" }
+# Specialized bridge for Jetpack Compose
+kaspresso-compose = { group = "com.kaspersky.android-components", name = "kaspresso-compose-support", version.ref = "kaspresso" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

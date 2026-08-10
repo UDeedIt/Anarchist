@@ -37,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
+
 import pro.udeedit.devtools.anarchist.AnarchistStatus
 import pro.udeedit.devtools.anarchist.demo.data.actions.PermissionActionExecutor
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
@@ -160,7 +162,9 @@ fun PermissionCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp)
+            // This unique tag is for test automation
+            .testTag("permission_card_${feature.id}"),
         colors = CardDefaults.cardColors(
             // Using a semi-transparent surface variant for a modern 'Cushy' feel
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -192,7 +196,11 @@ fun PermissionCard(
                 }
 
                 // D2D Supporting Info Button
-                IconButton(onClick = { showInfoDialog = true }) {
+                IconButton(
+                    onClick = { showInfoDialog = true },
+                    // Unique modifier for androidTest
+                    modifier = Modifier.testTag("btn_info_${feature.id}")
+                ) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = "Technical implementation details",
