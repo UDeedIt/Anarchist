@@ -243,6 +243,8 @@ fun PermissionCard(
                                         onOpenSettings()
                                     }
                                 },
+                                // Enables Appium to trigger permission flows
+                                modifier = Modifier.testTag("btn_action_${feature.id}"),
                                 colors =
                                     ButtonDefaults.buttonColors(
                                         containerColor = if (feature.isManualOnly) WarningOrange else ErrorRed,
