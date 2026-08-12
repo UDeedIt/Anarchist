@@ -18,10 +18,8 @@ composeBom = "2024.12.01"
 appcompat = "1.7.1"
 #noinspection GradleDependency
 material = "1.12.0"
-datastore = "1.2.1"
 datastorePreferences = "1.2.1"
 dokka = "2.2.0"
-mockito = "5.11.0" # Current stable version for 2026
 detekt = "1.23.8"
 kaspresso = "1.5.5"
 ktlint = "12.1.1"
@@ -57,3 +55,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 android-library = { id = "com.android.library", version.ref = "agp" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 kotlin-ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+kotlin-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
