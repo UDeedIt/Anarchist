@@ -221,7 +221,7 @@ fun DashboardContent(
                     IconButton(
                         onClick = actions.onResetAll,
                         // Enables Appium to trigger a global reset
-                        modifier = Modifier.testTag("btn_global_reset")
+                        modifier = Modifier.testTag("btn_global_reset"),
                     ) {
                         Text(
                             text = "🏴‍☠️",
@@ -254,7 +254,7 @@ fun DashboardContent(
                         selected = currentScreen == screen,
                         onClick = { actions.onTabSelected(screen) },
                         // Enables Appium to select tabs by ID
-                        modifier = Modifier.testTag("tab_${screen.route}")
+                        modifier = Modifier.testTag("tab_${screen.route}"),
                     )
                 }
             }
