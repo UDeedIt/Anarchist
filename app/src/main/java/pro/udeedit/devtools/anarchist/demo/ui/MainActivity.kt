@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -217,7 +218,11 @@ fun DashboardContent(
                      * The 🏴‍☠️ icon triggers the clearing of all internal permission
                      * request history, allowing for a fresh start of the demo.
                      */
-                    IconButton(onClick = actions.onResetAll) {
+                    IconButton(
+                        onClick = actions.onResetAll,
+                        // Enables Appium to trigger a global reset
+                        modifier = Modifier.testTag("btn_global_reset"),
+                    ) {
                         Text(
                             text = "🏴‍☠️",
                             style = MaterialTheme.typography.headlineSmall,
@@ -248,6 +253,8 @@ fun DashboardContent(
                         label = { Text(text = stringResource(id = screen.titleRes)) },
                         selected = currentScreen == screen,
                         onClick = { actions.onTabSelected(screen) },
+                        // Enables Appium to select tabs by ID
+                        modifier = Modifier.testTag("tab_${screen.route}"),
                     )
                 }
             }
@@ -279,98 +286,6 @@ fun DashboardContent(
         }
     }
 }
-
-// @OptIn(ExperimentalMaterial3Api::class)
-// @Composable
-// fun AnarchistDashboard(
-//    viewModel: DashboardViewModel = viewModel()
-// ) {
-//    val context = LocalContext.current
-//    val activity = context as Activity
-//
-//    // Monitors the foreground/background state of the Activity
-//    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-//
-//    // Observers the reactive StateFlow containing the permission features
-//    val permissions by viewModel.permissionFeatures.collectAsState()
-//
-//    /**
-//     * D2D SUPPORTING LOGIC: Lifecycle Synchronization
-//     * Attaches an observer to refresh permission statuses every time the user
-//     * returns to the app from the system settings or a permission dialog.
-//     */
-//    DisposableEffect(lifecycleOwner) {
-//        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-//            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-//                // Silently refresh the list to catch any manual system changes
-//                viewModel.refreshStatuses(activity)
-//            }
-//        }
-//
-//        lifecycleOwner.lifecycle.addObserver(observer)
-//
-//        onDispose {
-//            lifecycleOwner.lifecycle.removeObserver(observer)
-//        }
-//    }
-//
-//    /**
-//     * INITIAL SYNCHRONIZATION:
-//     * Triggers a status check for all registered permissions on startup.
-//     */
-//    LaunchedEffect(Unit) {
-//        viewModel.refreshStatuses(activity)
-//    }
-//
-//    Scaffold(
-//        topBar = {
-//            CenterAlignedTopAppBar(
-//                title = { Text("Anarchist Dashboard 🏴‍☠️") },
-//                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-//                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-//                    titleContentColor = MaterialTheme.colorScheme.primary,
-//                )
-//            )
-//        }
-//    ) { padding ->
-//
-//        /**
-//         * SCALABLE LIST:
-//         * Uses a LazyColumn to efficiently render the permission registry.
-//         */
-//        LazyColumn(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(padding)
-//                .padding(horizontal = 16.dp),
-//            contentPadding = PaddingValues(vertical = 8.dp)
-//        ) {
-//
-//            // Map the permissions list into interactive cards
-//            items(permissions) { feature ->
-//
-//                PermissionCard(
-//                    feature = feature,
-//
-//                    // Logic for standard system request
-//                    onRequest = {
-//                        viewModel.requestPermission(activity, feature)
-//                    },
-//
-//                    // Path for manual recovery in system settings
-//                    onOpenSettings = {
-//                        Anarchist.openSettings(context)
-//                    },
-//
-//                    // Supporting utility for resetting the request history
-//                    onRevoke = {
-//                        viewModel.revokePermission(context, feature)
-//                    }
-//                )
-//            }
-//        }
-//    }
-// }
 
 /**
  * Basic Theme wrapper for the Demo components.
