@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.dokka) // Dokka v2 applied
 }
 
 android {
@@ -30,7 +31,19 @@ android {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
+}
 
+/**
+ * Task to create a JAR containing the Dokka-generated HTML.
+ * This is a mandatory requirement for Maven Central publishing.
+ */
+val javadocJar by tasks.registering(Jar::class) {
+    group = "publishing" // Categorizes the task in the Gradle menu
+    description = "Assembles a JAR archive containing the Dokka documentation"
+
+    archiveClassifier.set("javadoc")
+    from(layout.buildDirectory.dir("dokka/html"))
+    dependsOn("dokkaGenerate")
 }
 
 dependencies {
