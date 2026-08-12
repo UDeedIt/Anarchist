@@ -1,0 +1,51 @@
+  # Detekt Configuration for Anarchist Project
+  # Supporting Logic: Enforces clean code standards and identifies architectural debt.
+    
+  build:
+    maxIssues: 0
+    excludeCorrectable: false
+    
+  complexity:
+    TooManyFunctions:
+      active: true
+      thresholdInFiles: 30
+      thresholdInClasses: 20
+      # Increased to support the Action Strategy pattern
+      thresholdInObjects: 20
+    LongMethod:
+      active: true
+      threshold: 200 # Increased to handle large Compose Screens
+    CyclomaticComplexMethod:
+        active: true
+        threshold: 25 # Increased for complex permission matrices
+    LongParameterList:
+      active: true
+      # Modern Detekt 1.23+ properties
+      functionThreshold: 10
+      constructorThreshold: 10
+
+  style:
+    MaxLineLength:
+      active: true
+      maxLineLength: 160 # High enough for Manifest strings
+    MagicNumber:
+      active: true
+      ignoreNumbers: [ '-1', '0', '1', '2', '100', '65536' ] # Added our 16-bit constant
+
+  exceptions:
+    TooGenericExceptionCaught:
+      active: true
+      # Allows generic catch blocks for system Intent failures
+      exceptionNames:
+        - RuntimeException
+        - Exception
+
+  naming:
+    FunctionNaming:
+      active: true
+      functionPattern: '[a-z][a-zA-Z0-9]*'
+      # Excludes Compose components from lowercase naming rules
+      excludeClassPattern: '.*'
+      ignoreAnnotated:
+        - 'Composable'
+

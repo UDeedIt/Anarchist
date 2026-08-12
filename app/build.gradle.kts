@@ -2,25 +2,48 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.kotlin.ktlint)
+}
+
+detekt {
+    toolVersion = "1.23.8"
+    config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+}
+
+/**
+ * Modern Ktlint configuration for the entire project.
+ * This block enforces the official Android Kotlin style guide.
+ */
+ktlint {
+    version.set("1.3.1") // Internal Ktlint engine version
+    android.set(true) // Enforces Android-specific spacing and rules
+    ignoreFailures.set(false) // Fails the build if style is incorrect
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+    }
 }
 
 android {
     namespace = "pro.udeedit.devtools.anarchist.demo"
 
     compileSdk {
-        version = release(37) {
-            minorApiLevel = 1
-        }
+        version =
+            release(37) {
+                minorApiLevel = 1
+            }
     }
 
     defaultConfig {
         applicationId = "pro.udeedit.devtools.anarchist.demo"
         minSdk = 24
         targetSdk = 37
-        versionCode = 2
-        versionName = "1.0.0 merge 19"
+        versionCode = 3
+        versionName = "1.0.0"
 
-        // vc3, 1.0.0 merge 19 - finished ANARCH-6 Anarchist Library Core
+        // vc3, 1.0.0. - first release
+        // vc2, 1.0.0 merge 19 - finished ANARCH-6 Anarchist Library Core
         //      this branch will collect chnages made here.
         // test commit - correct commit message
         // vc 1.0.0 merge 2 - ANARCH-11 Implement Dashboard Orchestration and Navigation
@@ -34,7 +57,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -76,6 +99,14 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // --- UI AUTOMATION STACK ---
+    androidTestImplementation(libs.kaspresso)
+    androidTestImplementation(libs.kaspresso.compose)
+
+    // Required for the Compose test rules
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     implementation(project(":anarchist"))
 }

@@ -4,25 +4,61 @@ import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import pro.udeedit.devtools.anarchist.Anarchist
+import pro.udeedit.devtools.anarchist.demo.R
 import pro.udeedit.devtools.anarchist.demo.data.mocks.PreviewMocks
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 import pro.udeedit.devtools.anarchist.demo.ui.components.PermissionCard
 import pro.udeedit.devtools.anarchist.demo.ui.navigation.Screen
 import pro.udeedit.devtools.anarchist.demo.ui.navigation.navItems
 import pro.udeedit.devtools.anarchist.demo.ui.viewmodels.DashboardViewModel
-import pro.udeedit.devtools.anarchist.demo.R
+
+/**
+ * Encapsulates all user interaction callbacks for the Anarchist Dashboard.
+ *
+ * This container follows the 'Command' pattern to simplify Composable signatures
+ * and improve code maintainability.
+ */
+data class DashboardActions(
+    val onTabSelected: (Screen) -> Unit,
+    val onRequest: (PermissionFeature) -> Unit,
+    val onOpenSettings: (PermissionFeature) -> Unit,
+    val onRevoke: (PermissionFeature) -> Unit,
+    val onResetAll: () -> Unit,
+)
 
 /**
  * Main Activity for the Anarchist Demo.
@@ -31,19 +67,17 @@ import pro.udeedit.devtools.anarchist.demo.R
  * within a reactive, multi-tabbed dashboard environment.
  */
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             // Applying the project-standard theme wrapper
             AnarchistDemoTheme {
-
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
-                    // Initializing the stateful dashboard orchestration
+                    // Initializing the primary dashboard orchestration
                     AnarchistDashboard()
                 }
             }
@@ -59,9 +93,7 @@ class MainActivity : ComponentActivity() {
  * monitors the Activity lifecycle to ensure real-time status synchronization.
  */
 @Composable
-fun AnarchistDashboard(
-    viewModel: DashboardViewModel = viewModel()
-) {
+fun AnarchistDashboard(viewModel: DashboardViewModel = viewModel()) {
     val context = LocalContext.current
     val activity = context as Activity
 
@@ -75,19 +107,19 @@ fun AnarchistDashboard(
     // State to control the visibility of the global Reset Confirmation Dialog
     var showResetDialog by remember { mutableStateOf(false) }
 
-
     /**
      * D2D SUPPORTING LOGIC: Lifecycle Resumption Sync
      * Attaches an observer to refresh permission statuses every time the user
      * returns to the application from system screens (settings or dialogs).
      */
     DisposableEffect(lifecycleOwner) {
-        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                // Perform a non-intrusive status scan
-                viewModel.refreshStatuses(activity)
+        val observer =
+            androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    // Perform a non-intrusive status scan
+                    viewModel.refreshStatuses(activity)
+                }
             }
-        }
 
         lifecycleOwner.lifecycle.addObserver(observer)
 
@@ -96,7 +128,6 @@ fun AnarchistDashboard(
         }
     }
 
-
     /**
      * INITIAL SYNCHRONIZATION:
      * Triggers a status refresh when the dashboard first enters the composition.
@@ -104,7 +135,6 @@ fun AnarchistDashboard(
     LaunchedEffect(Unit) {
         viewModel.refreshStatuses(activity)
     }
-
 
     /**
      * RESET CONFIRMATION DIALOG:
@@ -123,7 +153,7 @@ fun AnarchistDashboard(
                 }) {
                     Text(
                         text = stringResource(id = R.string.reset_confirm),
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             },
@@ -131,26 +161,30 @@ fun AnarchistDashboard(
                 TextButton(onClick = { showResetDialog = false }) {
                     Text(text = stringResource(id = R.string.reset_cancel))
                 }
-            }
+            },
         )
     }
 
+    // Supporting Logic: Creating the actions container to reduce parameter count
+    val actions =
+        remember(viewModel, activity, context) {
+            DashboardActions(
+                onTabSelected = { viewModel.selectTab(it) },
+                onRequest = { viewModel.requestPermission(activity, it) },
+                onOpenSettings = { feature ->
+                    Anarchist.openSpecialSettings(context, feature.manifestString)
+                },
+                onRevoke = { viewModel.revokePermission(context, it) },
+                onResetAll = { showResetDialog = true },
+            )
+        }
 
     // Delegation to the stateless content renderer
     DashboardContent(
         title = stringResource(id = R.string.dashboard_title),
         permissions = permissions,
         currentScreen = currentScreen,
-        onTabSelected = { viewModel.selectTab(it) },
-        onRequest = { viewModel.requestPermission(activity, it) },
-
-        // Passing the feature to handle specialized intent mapping
-        onOpenSettings = { feature ->
-            Anarchist.openSpecialSettings(context, feature.manifestString)
-        },
-
-        onRevoke = { viewModel.revokePermission(context, it) },
-        onResetAll = { showResetDialog = true }
+        actions = actions,
     )
 }
 
@@ -164,11 +198,7 @@ fun AnarchistDashboard(
  * @param title The text displayed in the Top App Bar.
  * @param permissions The list of [PermissionFeature] objects to render.
  * @param currentScreen The currently active navigation tab.
- * @param onTabSelected Callback for switching between dashboard categories.
- * @param onRequest Callback to trigger the library's permission request logic.
- * @param onOpenSettings Callback to open the device application settings (Standard or Special).
- * @param onRevoke Callback to reset the internal request history.
- * @param onResetAll Callback to trigger the global reset dialog.
+ * @param actions The container for all user interaction callbacks.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -176,11 +206,7 @@ fun DashboardContent(
     title: String,
     permissions: List<PermissionFeature>,
     currentScreen: Screen,
-    onTabSelected: (Screen) -> Unit,
-    onRequest: (PermissionFeature) -> Unit,
-    onOpenSettings: (PermissionFeature) -> Unit, // Updated to accept feature
-    onRevoke: (PermissionFeature) -> Unit,
-    onResetAll: () -> Unit
+    actions: DashboardActions,
 ) {
     Scaffold(
         topBar = {
@@ -192,17 +218,22 @@ fun DashboardContent(
                      * The 🏴‍☠️ icon triggers the clearing of all internal permission
                      * request history, allowing for a fresh start of the demo.
                      */
-                    IconButton(onClick = onResetAll) {
+                    IconButton(
+                        onClick = actions.onResetAll,
+                        // Enables Appium to trigger a global reset
+                        modifier = Modifier.testTag("btn_global_reset"),
+                    ) {
                         Text(
                             text = "🏴‍☠️",
-                            style = MaterialTheme.typography.headlineSmall
+                            style = MaterialTheme.typography.headlineSmall,
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                )
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.primary,
+                    ),
             )
         },
         bottomBar = {
@@ -216,16 +247,18 @@ fun DashboardContent(
                         icon = {
                             Icon(
                                 imageVector = screen.icon,
-                                contentDescription = stringResource(id = screen.contentDescriptionRes)
+                                contentDescription = stringResource(id = screen.contentDescriptionRes),
                             )
                         },
                         label = { Text(text = stringResource(id = screen.titleRes)) },
                         selected = currentScreen == screen,
-                        onClick = { onTabSelected(screen) }
+                        onClick = { actions.onTabSelected(screen) },
+                        // Enables Appium to select tabs by ID
+                        modifier = Modifier.testTag("tab_${screen.route}"),
                     )
                 }
             }
-        }
+        },
     ) { padding ->
 
         /**
@@ -233,29 +266,26 @@ fun DashboardContent(
          * Efficiently renders a list of cards based on the active category.
          */
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(vertical = 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
         ) {
-
             items(permissions) { feature ->
 
                 PermissionCard(
                     feature = feature,
-                    onRequest = { onRequest(feature) },
-
+                    onRequest = { actions.onRequest(feature) },
                     // Passing the feature down to the component
-                    onOpenSettings = { onOpenSettings(feature) },
-
-                    onRevoke = { onRevoke(feature) }
+                    onOpenSettings = { actions.onOpenSettings(feature) },
+                    onRevoke = { actions.onRevoke(feature) },
                 )
             }
         }
     }
 }
-
 
 /**
  * Basic Theme wrapper for the Demo components.
@@ -264,7 +294,6 @@ fun DashboardContent(
 fun AnarchistDemoTheme(content: @Composable () -> Unit) {
     MaterialTheme(content = content)
 }
-
 
 // --- DASHBOARD PREVIEWS ---
 
@@ -276,11 +305,7 @@ fun PreviewStandardTab() {
             title = "Anarchist Dashboard",
             permissions = PreviewMocks.mockStandardList,
             currentScreen = Screen.Standard,
-            onTabSelected = {},
-            onRequest = {},
-            onOpenSettings = {},
-            onRevoke = {},
-            onResetAll = {}
+            actions = DashboardActions({}, {}, {}, {}, {}),
         )
     }
 }
@@ -293,11 +318,7 @@ fun PreviewSpecialTab() {
             title = "Anarchist Dashboard",
             permissions = PreviewMocks.mockSpecialList,
             currentScreen = Screen.Special,
-            onTabSelected = {},
-            onRequest = {},
-            onOpenSettings = {},
-            onRevoke = {},
-            onResetAll = {}
+            actions = DashboardActions({}, {}, {}, {}, {}),
         )
     }
 }
@@ -310,11 +331,7 @@ fun PreviewBundlesTab() {
             title = "Anarchist Dashboard",
             permissions = PreviewMocks.mockBundlesList,
             currentScreen = Screen.Bundles,
-            onTabSelected = {},
-            onRequest = {},
-            onOpenSettings = {},
-            onRevoke = {},
-            onResetAll = {}
+            actions = DashboardActions({}, {}, {}, {}, {}),
         )
     }
 }

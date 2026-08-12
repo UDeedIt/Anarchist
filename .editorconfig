@@ -1,0 +1,19 @@
+# Top-level .editorconfig for Anarchist Project
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 160
+
+[*.{kt,kts}]
+
+# Disables standard naming rules for Composables
+ktlint_standard_function-naming = disabled
+ktlint_standard_property-naming = disabled
+
+# Allows the backing property pattern (e.g., _allFeatures)
+ktlint_standard_backing-property-naming = disabled

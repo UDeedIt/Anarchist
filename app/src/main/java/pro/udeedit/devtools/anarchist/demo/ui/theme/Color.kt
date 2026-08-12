@@ -1,3 +1,5 @@
+@file:Suppress("MagicNumber")
+
 package pro.udeedit.devtools.anarchist.demo.ui.theme
 
 import androidx.compose.ui.graphics.Color
