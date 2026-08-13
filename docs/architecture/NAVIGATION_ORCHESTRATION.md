@@ -5,7 +5,9 @@ To handle a growing number of permissions without overwhelming the user, the das
 
 ## Implementation
 - Navigation Contract (Screen): A sealed class that defines the route, icon, and localized resource IDs for each tab.
+
 - ViewModel State Management: The DashboardViewModel tracks the currentScreen and dynamically filters the PermissionRegistry based on the selected tab.
+
 - Stateless UI: The DashboardContent receives the navigation state and callbacks, ensuring the UI remains a pure renderer.
 
 ## D2D Supporting Benefits

@@ -15,6 +15,7 @@ The project utilizes the underscore prefix pattern for private StateFlows (e.g.,
 
 ## Automation
 - Check: ./gradlew ktlintCheck is integrated into the CI/CD pipeline.
+
 - Auto-Fix: ./gradlew ktlintFormat is used during development to automatically resolve spacing, indentation, and newline violations.
 
 ## D2D Benefits

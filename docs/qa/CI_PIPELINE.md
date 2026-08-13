@@ -10,10 +10,14 @@ To optimize build resources, the CI pipeline is configured to trigger specifical
 The pipeline executes the following automated steps in a clean Ubuntu environment:
 
 1. Environment Setup: Initializes the runner with JDK 17 (Temurin distribution) and configures the Gradle Cache to accelerate subsequent builds.
+
 2. Unit Verification: Executes ./gradlew :anarchist:testDebugUnitTest to ensure core permission logic and environment detection remain intact.
+
 3. Static Analysis: Runs ./gradlew :anarchist:lintDebug to enforce Android coding standards and identify potential performance or security issues.
+
 4. Build Validation: Performs a full ./gradlew :anarchist:assembleDebug to verify that the library packages correctly and is ready for distribution.
 
 ## D2D Supporting Benefits
 - Regression Prevention: Automated testing ensures that new features do not break existing permission logic.
+
 - Build Transparency: Public CI logs allow contributors to verify the health of the project at a glance.
