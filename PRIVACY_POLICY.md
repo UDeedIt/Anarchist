@@ -10,8 +10,10 @@ Anarchist is built on a "Privacy-First" architecture. We do not collect, transmi
 ## 2. Permission Request Rationale
 The App serves as a live environment to test the library's ability to handle various Android system permissions. As such:
 *   Demonstration Requests: The App will request various permissions (e.g., Notifications, Alarms, etc.) exclusively to demonstrate the library's "Allow them all" logic.
-*   No Data Access: Even when a permission is granted for demonstration, the App does not access, read, or export the associated user data (such as contacts, files, or location).
-*   Local State Only: The library only tracks the status of the permission (Granted, Denied, or Rationale needed) to update the UI reactively.
+
+* No Data Access: Even when a permission is granted for demonstration, the App does not access, read, or export the associated user data (such as contacts, files, or location).
+
+* Local State Only: The library only tracks the status of the permission (Granted, Denied, or Rationale needed) to update the UI reactively.
 
 ## 3. Third-Party Integration
 This App is a pure utility. It does not contain third-party tracking, advertising, or analytics SDKs. No information regarding your device or permission states is shared with third-party service providers.

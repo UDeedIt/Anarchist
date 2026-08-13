@@ -8,7 +8,9 @@ When a user grants a permission using the "Only this time" option, the Android s
 
 ### Key Findings:
 - System Delay: checkSelfPermission() may continue to return PERMISSION_GRANTED for several minutes after an app has been killed.
+
 - Background Cleanup: The Android Permission Controller handles the cleanup asynchronously. If the app is restarted immediately, it may encounter a "False Positive" granted state.
+
 - Verification: Testing confirmed that after waiting approximately 5 minutes post-kill, the system correctly reports the state as DENIED.
 
 ## Implementation Impact
@@ -16,5 +18,7 @@ Because the Android SDK only returns a binary GRANTED or DENIED status, it is im
 
 Recommendation:
 - Never cache the ALLOWED state across app sessions.
+
 - Always perform a fresh system check during the ON_RESUME lifecycle event.
+
 - For high-security actions, perform a check immediately before the action is executed.

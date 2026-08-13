@@ -17,6 +17,8 @@ The initial run resulted in an AssertionError, proving the logic flaw existed. W
 
 ## Benefits for D2D Development
 - Regression Safety: Future updates to the navigation logic won't accidentally break the direct settings path.
+
 - Living Documentation: The test cases act as an explicit technical spec of how the PermissionCard should behave under different data inputs.
+
 - Higher Trust: Other developers using the Anarchist library can rely on the fact that every UI state has been verified by an automated suite.
 
