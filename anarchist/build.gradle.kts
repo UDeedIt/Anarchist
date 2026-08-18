@@ -24,17 +24,6 @@ android {
     }
 
     /**
-     * Modern configuration for Kotlin 2.x.
-     * This forces the Kotlin compiler to use JVM 17, matching the
-     * Java compiler and the :app module settings.
-     */
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
-    }
-
-    /**
      * Modern AGP configuration to automatically prepare the library
      * and its source code for publication.
      */
@@ -42,6 +31,17 @@ android {
         singleVariant("release") {
             withSourcesJar()
         }
+    }
+}
+
+/**
+ * Modern configuration for Kotlin 2.x.
+ * This forces the Kotlin compiler to use JVM 17, matching the
+ * Java compiler and the :app module settings.
+ */
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

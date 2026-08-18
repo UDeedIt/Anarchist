@@ -103,7 +103,7 @@ fun PermissionCard(
                 .testTag("permission_card_${feature.id}"),
         colors =
             CardDefaults.cardColors(
-                // Using a semi-transparent surface variant for a modern 'Cushy' feel
+                // Using a semi-transparent surface variant for a modern feel
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
             ),
     ) {
