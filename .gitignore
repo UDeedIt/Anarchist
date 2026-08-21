@@ -21,7 +21,6 @@
 # Build artifacts
 /build/
 **/build/
-cushy-storage/build/bundle/
 
 # Android release build artifacts
 /app/release/
@@ -34,7 +33,6 @@ cushy-storage/build/bundle/
 # Sensitive credentials
 #gradle.properties
 secret-key.gpg
-cushy-storage/secret-key.gpg
 
 # Local IDE/System files
 local.properties
