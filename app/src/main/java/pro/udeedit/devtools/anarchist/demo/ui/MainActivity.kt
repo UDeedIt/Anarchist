@@ -108,7 +108,15 @@ fun AnarchistDashboard(viewModel: DashboardViewModel = viewModel()) {
     var showResetDialog by remember { mutableStateOf(false) }
 
     /**
-     * D2D SUPPORTING LOGIC: Lifecycle Resumption Sync
+     * INITIAL SYNCHRONIZATION:
+     * Triggers a status refresh when the dashboard first enters the composition.
+     */
+    LaunchedEffect(Unit) {
+        viewModel.refreshStatuses(activity)
+    }
+
+    /**
+     * Lifecycle Resumption Sync
      * Attaches an observer to refresh permission statuses every time the user
      * returns to the application from system screens (settings or dialogs).
      */
@@ -126,14 +134,6 @@ fun AnarchistDashboard(viewModel: DashboardViewModel = viewModel()) {
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
-    }
-
-    /**
-     * INITIAL SYNCHRONIZATION:
-     * Triggers a status refresh when the dashboard first enters the composition.
-     */
-    LaunchedEffect(Unit) {
-        viewModel.refreshStatuses(activity)
     }
 
     /**
