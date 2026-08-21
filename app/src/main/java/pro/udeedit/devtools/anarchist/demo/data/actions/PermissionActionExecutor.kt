@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.location.Location
 import android.location.LocationManager
-import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
@@ -68,7 +67,7 @@ object PermissionActionExecutor {
 
             ID_CAMERA -> openCamera(context)
 
-            ID_LOCATION_FINE, ID_LOCATION_COARSE -> executeLocationReward(context) //openMapAtLocation(context)
+            ID_LOCATION_FINE, ID_LOCATION_COARSE -> executeLocationReward(context) // openMapAtLocation(context)
 
             ID_MICROPHONE -> openVoiceRecorder(context)
 
@@ -168,11 +167,12 @@ object PermissionActionExecutor {
         }
 
         // Select the most accurate available provider
-        val provider = if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            LocationManager.GPS_PROVIDER
-        } else {
-            LocationManager.NETWORK_PROVIDER
-        }
+        val provider =
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                LocationManager.GPS_PROVIDER
+            } else {
+                LocationManager.NETWORK_PROVIDER
+            }
 
         // Fetch the last known location synchronously
         val location: Location? = locationManager.getLastKnownLocation(provider)
@@ -191,9 +191,10 @@ object PermissionActionExecutor {
                 // Attempt to force Google Maps directly.
                 // The try-catch safely handles API 30+ package visibility restrictions
                 // if com.google.android.apps.maps is not declared in <queries> or not installed.
-                val mapIntent = Intent(Intent.ACTION_VIEW, uri).apply {
-                    setPackage("com.google.android.apps.maps")
-                }
+                val mapIntent =
+                    Intent(Intent.ACTION_VIEW, uri).apply {
+                        setPackage("com.google.android.apps.maps")
+                    }
                 context.startActivity(mapIntent)
             } catch (e: ActivityNotFoundException) {
                 Log.d(TAG, "ERROR: ${e.message}")
@@ -203,11 +204,12 @@ object PermissionActionExecutor {
             }
         } else {
             // 9. Handle the edge case where the system hasn't cached a location fix yet
-            Toast.makeText(
-                context,
-                "No cached location found. Try opening Maps manually to establish a fix.",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast
+                .makeText(
+                    context,
+                    "No cached location found. Try opening Maps manually to establish a fix.",
+                    Toast.LENGTH_LONG,
+                ).show()
         }
     }
 
@@ -317,7 +319,6 @@ object PermissionActionExecutor {
             }
         context.startActivity(intent)
     }
-
 
     /**
      * Supporting Logic: Generic handler for successful bundle transactions.
