@@ -77,6 +77,12 @@
         android:required="false" />
 
 
+    <!-- This block is for querying Google Maps -->
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+    </queries>
+
+
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"

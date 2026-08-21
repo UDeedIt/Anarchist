@@ -40,7 +40,7 @@ import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_WRITE_SE
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 
 /**
- * Centralized data provider for the complete Anarchist Demo v1.0 suite.
+ * Centralized data provider for the complete Anarchist Demo suite.
  *
  * This registry acts as a technical specification, mapping functional IDs
  * to their system requirements and technical metadata.

@@ -2,6 +2,7 @@ package pro.udeedit.devtools.anarchist.demo.ui.viewmodels
 
 import android.app.Activity
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +13,7 @@ import pro.udeedit.devtools.anarchist.AnarchistStatus
 import pro.udeedit.devtools.anarchist.demo.data.models.PermissionFeature
 import pro.udeedit.devtools.anarchist.demo.data.registry.PermissionRegistry
 import pro.udeedit.devtools.anarchist.demo.ui.navigation.Screen
+import pro.udeedit.devtools.anarchist.demo.ui.navigation.navItems
 
 /**
  * ViewModel responsible for orchestrating the multi-tab Anarchist Dashboard.
@@ -43,8 +45,7 @@ class DashboardViewModel(
         MutableStateFlow<Screen>(
             savedStateHandle.get<String>(KEY_ACTIVE_TAB)?.let { savedRoute ->
                 // Reconstruct the Screen object from the saved string route
-                pro.udeedit.devtools.anarchist.demo.ui.navigation.navItems
-                    .find { it.route == savedRoute }
+                navItems.find { it.route == savedRoute }
             } ?: Screen.Standard, // Default if nothing was saved
         )
 
@@ -110,10 +111,15 @@ class DashboardViewModel(
                     _allFeatures.value.filter { feature ->
                         PermissionRegistry.getSpecialPermissions().any { it.id == feature.id }
                     }
-                else ->
+                Screen.Bundles.route -> // Assuming your 3rd screen is named 'Grouped'
                     _allFeatures.value.filter { feature ->
                         PermissionRegistry.getGroupedPermissions().any { it.id == feature.id }
                     }
+                else -> {
+                    // Default action for unknown routes
+                    Log.w("DashboardViewModel", "Unknown route encountered: $currentRoute")
+                    emptyList() // Return an empty list or _allFeatures.value as a safe fallback
+                }
             }
     }
 

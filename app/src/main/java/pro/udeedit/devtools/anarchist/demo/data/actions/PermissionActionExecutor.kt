@@ -1,14 +1,19 @@
 package pro.udeedit.devtools.anarchist.demo.data.actions
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.location.Location
+import android.location.LocationManager
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
+import androidx.core.location.LocationManagerCompat
 import androidx.core.net.toUri
 import pro.udeedit.devtools.anarchist.AnarchistStatus
 import pro.udeedit.devtools.anarchist.demo.data.constants.FeatureIds.ID_BATTERY_OPTIMIZATION
@@ -62,7 +67,7 @@ object PermissionActionExecutor {
 
             ID_CAMERA -> openCamera(context)
 
-            ID_LOCATION_FINE, ID_LOCATION_COARSE -> openMapAtLocation(context)
+            ID_LOCATION_FINE, ID_LOCATION_COARSE -> executeLocationReward(context) // openMapAtLocation(context)
 
             ID_MICROPHONE -> openVoiceRecorder(context)
 
@@ -97,6 +102,34 @@ object PermissionActionExecutor {
     }
 
     /**
+     * Triggers a high-priority notification to verify status.
+     */
+    private fun sendTestNotification(context: Context) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel =
+                NotificationChannel(
+                    DEMO_CHANNEL_ID,
+                    "Anarchist Demo Actions",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                )
+            manager.createNotificationChannel(channel)
+        }
+
+        val builder =
+            NotificationCompat
+                .Builder(context, DEMO_CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Anarchist Success! 🏴‍☠️")
+                .setContentText("The permission action was performed successfully.")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+
+        manager.notify(1, builder.build())
+    }
+
+    /**
      * Launches the system camera intent.
      */
     private fun openCamera(context: Context) {
@@ -113,14 +146,71 @@ object PermissionActionExecutor {
     }
 
     /**
-     * Opens a map application at specific coordinates.
+     * Fetches the user's real geographic coordinates and opens them in a map application.
+     *
+     * This function assumes that the required location permissions (`ACCESS_FINE_LOCATION` or
+     * `ACCESS_COARSE_LOCATION`) have already been granted via the Anarchist library, hence
+     * the MissingPermission suppression. It prioritizes Google Maps to ensure consistent behavior
+     * but safely falls back to any available map provider (e.g., Yandex) if Google Maps is absent.
+     *
+     * @param context The context used to access system services and launch map intents.
      */
-    private fun openMapAtLocation(context: Context) {
-        val mapIntent =
-            Intent(Intent.ACTION_VIEW, "geo:52.5200,13.4050?z=15".toUri()).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    @SuppressLint("MissingPermission")
+    fun executeLocationReward(context: Context) {
+        // Retrieve the system's LocationManager
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+        // Ensure device-level location services (GPS/Network) are actually toggled on
+        if (!LocationManagerCompat.isLocationEnabled(locationManager)) {
+            Toast.makeText(context, "Please enable device location services.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Select the most accurate available provider
+        val provider =
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                LocationManager.GPS_PROVIDER
+            } else {
+                LocationManager.NETWORK_PROVIDER
             }
-        context.startActivity(mapIntent)
+
+        // Fetch the last known location synchronously
+        val location: Location? = locationManager.getLastKnownLocation(provider)
+
+        if (location != null) {
+            val lat = location.latitude
+            val lng = location.longitude
+
+            // Notify the user that real coordinates were successfully retrieved
+            Toast.makeText(context, "Real Location: Lat $lat, Lng $lng", Toast.LENGTH_LONG).show()
+
+            // Construct a geo-URI with a pin at the exact coordinates
+            val uri = "geo:$lat,$lng?q=$lat,$lng(You+are+here)".toUri()
+
+            try {
+                // Attempt to force Google Maps directly.
+                // The try-catch safely handles API 30+ package visibility restrictions
+                // if com.google.android.apps.maps is not declared in <queries> or not installed.
+                val mapIntent =
+                    Intent(Intent.ACTION_VIEW, uri).apply {
+                        setPackage("com.google.android.apps.maps")
+                    }
+                context.startActivity(mapIntent)
+            } catch (e: ActivityNotFoundException) {
+                Log.d(TAG, "ERROR: ${e.message}")
+                // Fallback: Let the Android OS choose the default or available map app (e.g., Yandex)
+                val fallbackIntent = Intent(Intent.ACTION_VIEW, uri)
+                context.startActivity(fallbackIntent)
+            }
+        } else {
+            // 9. Handle the edge case where the system hasn't cached a location fix yet
+            Toast
+                .makeText(
+                    context,
+                    "No cached location found. Try opening Maps manually to establish a fix.",
+                    Toast.LENGTH_LONG,
+                ).show()
+        }
     }
 
     /**
@@ -183,38 +273,17 @@ object PermissionActionExecutor {
     }
 
     /**
-     * Triggers a high-priority notification to verify status.
-     */
-    private fun sendTestNotification(context: Context) {
-        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel =
-                NotificationChannel(
-                    DEMO_CHANNEL_ID,
-                    "Anarchist Demo Actions",
-                    NotificationManager.IMPORTANCE_DEFAULT,
-                )
-            manager.createNotificationChannel(channel)
-        }
-
-        val builder =
-            NotificationCompat
-                .Builder(context, DEMO_CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle("Anarchist Success! 🏴‍☠️")
-                .setContentText("The permission action was performed successfully.")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setAutoCancel(true)
-
-        manager.notify(1, builder.build())
-    }
-
-    /**
      * Demonstrates success for settings-based permissions.
      */
     private fun triggerAlarmTest(context: Context) {
         Toast.makeText(context, "Exact Alarm functionality verified.", Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Verification for overlay permissions.
+     */
+    private fun verifyOverlayStatus(context: Context) {
+        Toast.makeText(context, "System Overlay successfully authorized.", Toast.LENGTH_SHORT).show()
     }
 
     /**
@@ -249,13 +318,6 @@ object PermissionActionExecutor {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         context.startActivity(intent)
-    }
-
-    /**
-     * Verification for overlay permissions.
-     */
-    private fun verifyOverlayStatus(context: Context) {
-        Toast.makeText(context, "System Overlay successfully authorized.", Toast.LENGTH_SHORT).show()
     }
 
     /**
