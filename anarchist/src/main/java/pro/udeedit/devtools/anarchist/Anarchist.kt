@@ -1,15 +1,19 @@
 package pro.udeedit.devtools.anarchist
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.Manifest
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import pro.udeedit.devtools.anarchist.internal.AnarchistPreference
+import androidx.core.net.toUri
 
 /**
  * The primary entry point for the Anarchist Permissions Library.
@@ -119,14 +123,39 @@ object Anarchist {
      */
     private fun isGranted(context: Context, permission: String): Boolean {
         return when (permission) {
-            // Supporting Case: Exact Alarms (API 31+)
-            "android.permission.SCHEDULE_EXACT_ALARM" -> {
+            // Alarms & Reminders (API 31+)
+            Manifest.permission.SCHEDULE_EXACT_ALARM -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
                     alarmManager.canScheduleExactAlarms()
-
                 } else {
                     true // Implicitly allowed on older versions
+                }
+            }
+
+            // System Overlay / Draw over other apps
+            Manifest.permission.SYSTEM_ALERT_WINDOW -> {
+                Settings.canDrawOverlays(context)
+            }
+
+            // All Files Access (API 30+)
+            Manifest.permission.MANAGE_EXTERNAL_STORAGE -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    android.os.Environment.isExternalStorageManager()
+                } else {
+                    // For below Android 11, we rely on standard READ/WRITE checks,
+                    // so if they asked for this specific string, return false or true based on your legacy logic.
+                    // Usually, returning true here is safe if you also request WRITE_EXTERNAL_STORAGE.
+                    true
+                }
+            }
+
+            // Install Unknown Apps (API 26+)
+            Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.packageManager.canRequestPackageInstalls()
+                } else {
+                    true
                 }
             }
 
@@ -139,7 +168,6 @@ object Anarchist {
             }
         }
     }
-
 
     /**
      * Triggers the standard Android system permission dialog for a list of permissions.
@@ -224,31 +252,81 @@ object Anarchist {
      * to ensure the user is never left on a dead screen.
      *
      * @param context The context used to start the intent.
-     * @param manifestString The specific permission string requiring the settings jump.
+     * @param permission The specific permission string requiring the settings jump.
      */
-    fun openSpecialSettings(context: Context, manifestString: String) {
-        val intent = when (manifestString) {
-            "android.permission.SCHEDULE_EXACT_ALARM" -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                    }
-                } else null
+    fun openSpecialSettings(context: Context, permission: String) {
+        val packageName = context.packageName
+        val packageUri = "package:$packageName".toUri()
+
+        val intent = when (permission) {
+            // System Overlay / Draw over other apps
+            Manifest.permission.SYSTEM_ALERT_WINDOW -> {
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri)
             }
-            else -> null
+
+            // Modify system settings
+            Manifest.permission.WRITE_SETTINGS -> {
+                Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, packageUri)
+            }
+
+            // All Files Access (Android 11+)
+            Manifest.permission.MANAGE_EXTERNAL_STORAGE -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, packageUri)
+                } else {
+                    getDefaultSettingsIntent(packageUri)
+                }
+            }
+
+            // Usage Data Access (Usually does not accept package URI, opens the list)
+            Manifest.permission.PACKAGE_USAGE_STATS -> {
+                Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            }
+
+            // Alarms & Reminders (Android 12+)
+            Manifest.permission.SCHEDULE_EXACT_ALARM -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, packageUri)
+                } else {
+                    getDefaultSettingsIntent(packageUri)
+                }
+            }
+
+            // Install Unknown Apps
+            Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, packageUri)
+                } else {
+                    getDefaultSettingsIntent(packageUri)
+                }
+            }
+
+            // Fallback for standard permissions or unmapped special ones
+            else -> getDefaultSettingsIntent(packageUri)
         }
 
+        // Attempt to open the specific settings page.
+        // Fall back to the general App Info page if a custom ROM removed the specific intent.
         try {
-            if (intent != null) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
-            } else {
-                // Fallback for permissions without specific intent mapping
-                openSettings(context)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Log.e("Anarchist", "Failed to open settings for $permission", e)
+            val fallbackIntent = getDefaultSettingsIntent(packageUri).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-        } catch (e: Exception) {
-            // Final safety fallback to ensure the button always performs an action
-            openSettings(context)
+            context.startActivity(fallbackIntent)
         }
+    }
+
+    /**
+     * Helper to generate the default App Info settings intent.
+     *
+     * @param packageUri The parsed URI of the application package (e.g., package:com.example.app)
+     *                   used to highlight the specific app in the settings menu.
+     * @return An Intent configured to open the application details settings page.
+     */
+    private fun getDefaultSettingsIntent(packageUri: Uri): Intent {
+        return Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri)
     }
 }
